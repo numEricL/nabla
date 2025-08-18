@@ -1,11 +1,11 @@
-#ifndef TENSOR_LAYOUTS_LEFT_STRIDED_HPP
-#define TENSOR_LAYOUTS_LEFT_STRIDED_HPP
+#ifndef NABLA_LAYOUTS_LEFT_STRIDED_HPP
+#define NABLA_LAYOUTS_LEFT_STRIDED_HPP
 
 #include <array>
 #include <sstream>
 #include <stacktrace>
 #include <stdexcept>
-#include "nabla/forward_declarations.hpp"
+#include "nabla/traits.hpp"
 
 namespace nabla {
 namespace layout {
@@ -14,18 +14,18 @@ template <Rank rank_>
 class LeftStrided : LayoutTag {
     public:
         static constexpr Rank rank = rank_;
-        using Index = size_t;
-        using Subscript = std::array<Index, rank>;
-        // using SubscriptConstRef = const Subscript&;
-        using SubscriptConstRef = Subscript;
+        using index_type = size_t;
+        using subscript_type = std::array<index_type, rank>;
+        // using subscript_cref_type = const subscript_type&;
+        using subscript_cref_type = subscript_type;
 
     private:
-        Subscript _dimensions;
-        Subscript _strides;
+        subscript_type _dimensions;
+        subscript_type _strides;
 
-        Subscript _default_strides(SubscriptConstRef dimensions) const {
-            Subscript strides;
-            Index stride = 1;
+        subscript_type _default_strides(subscript_cref_type dimensions) const {
+            subscript_type strides;
+            index_type stride = 1;
             for (Rank i = 0; i < rank; ++i) {
                 strides[i] = stride;
                 stride *= dimensions[i];
@@ -33,11 +33,11 @@ class LeftStrided : LayoutTag {
             return strides;
         }
 
-        void _assert_index(SubscriptConstRef indices) const {
+        void _assert_index(subscript_cref_type indices) const {
             for (Rank i = 0; i < rank; ++i) {
                 if (indices[i] < 0 || indices[i] >= _dimensions[i]) {
                     std::stringstream ss;
-                    Subscript bounds = _dimensions;
+                    subscript_type bounds = _dimensions;
                     for (auto& x : bounds) { x--; }
                     ss << "tensor error: _assert_index : index " << i << " is out of bounds\n"
                         << "\tindices:     " << indices << "\n"
@@ -50,17 +50,17 @@ class LeftStrided : LayoutTag {
         }
 
     public:
-        Index operator()(SubscriptConstRef indices) const {
+        index_type operator()(subscript_cref_type indices) const {
             _assert_index(indices);
-            Index idx = 0;
+            index_type idx = 0;
             for (Rank i = 0; i < rank; ++i) {
                 idx += indices[i] * _strides[i];
             }
             return idx;
         }
 
-        Index flat_index(Index idx) const {
-            Subscript indices;
+        index_type flat_index(index_type idx) const {
+            subscript_type indices;
             for (Rank i = rank - 1; i >= 0; --i) {
                 indices[i] = idx / _strides[i];
                 idx -= indices[i] * _strides[i];
@@ -68,31 +68,31 @@ class LeftStrided : LayoutTag {
             return this->operator()(indices);
         }
 
-        SubscriptConstRef dimensions() const {
+        subscript_cref_type dimensions() const {
             return _dimensions;
         }
 
-        SubscriptConstRef strides() const {
+        subscript_cref_type strides() const {
             return _strides;
         }
 
-        Index size() {
-            Index total_size = 1;
+        index_type size() const {
+            index_type total_size = 1;
             for (Rank i = 0; i < rank; ++i) {
                 total_size *= _dimensions[i];
             }
             return total_size;
         }
 
-        Index mem_size() const {
-            Subscript last_index;
+        index_type mem_size() const {
+            subscript_type last_index;
             for (Rank i = 0; i < rank; ++i) {
                 last_index[i] = _dimensions[i] - 1;
             }
             return this->operator()(last_index) + 1;
         }
 
-        void assert_container(Index container_size, Index offset) const {
+        void assert_container(index_type container_size, index_type offset) const {
             if (offset + mem_size() > container_size) {
                 std::stringstream ss;
                 ss << "LeftStrided error: container size is too small for layout.\n"
@@ -104,21 +104,10 @@ class LeftStrided : LayoutTag {
             }
         }
 
-        //template <Rank rank>
-        //    Subscript
-        //    mem_to_subscript(Index idx) const {
-        //        Subscript indices;
-        //        for (Rank i = rank - 1; i >= 0; --i) {
-        //            indices[i] = idx / _strides[i];
-        //            idx -= indices[i] * _strides[i];
-        //        }
-        //        return indices;
-        //    }
-
         // constructors
         LeftStrided() = default;
 
-        LeftStrided(SubscriptConstRef dimensions, SubscriptConstRef strides)
+        LeftStrided(subscript_cref_type dimensions, subscript_cref_type strides)
             : _dimensions(dimensions), _strides(strides) {
                 for (Rank i = 0; i < rank; ++i) {
                     if (dimensions[i] < 0) {
@@ -138,7 +127,7 @@ class LeftStrided : LayoutTag {
                         throw std::out_of_range(ss.str());
                     }
                 }
-                Index min_stride = 1;
+                index_type min_stride = 1;
                 for (Rank i = 0; i < rank; ++i) {
                     if (strides[i] < min_stride) {
                         std::stringstream ss;
@@ -152,11 +141,11 @@ class LeftStrided : LayoutTag {
                 }
             }
 
-        LeftStrided(SubscriptConstRef dimensions)
+        LeftStrided(subscript_cref_type dimensions)
             : LeftStrided(dimensions, _default_strides(dimensions)) {}
 
         // sub-layout constructor
-        LeftStrided(const LeftStrided& layout, SubscriptConstRef dimensions, SubscriptConstRef offset = {})
+        LeftStrided(const LeftStrided& layout, subscript_cref_type dimensions, subscript_cref_type offset = {})
             : _dimensions(dimensions), _strides(layout._strides) {
                 for (Rank i = 0; i < rank; ++i) {
                     if (dimensions[i] < 0 || offset[i] < 0 || offset[i] + dimensions[i] > layout._dimensions[i]) {
@@ -172,7 +161,7 @@ class LeftStrided : LayoutTag {
                 }
             }
 
-        LeftStrided sublayout(SubscriptConstRef dimensions, SubscriptConstRef offset = {}) const {
+        LeftStrided sublayout(subscript_cref_type dimensions, subscript_cref_type offset = {}) const {
             return LeftStrided(*this, dimensions, offset);
         }
 };
@@ -180,4 +169,4 @@ class LeftStrided : LayoutTag {
 } // namespace layout
 } // namespace nabla
 
-#endif // TENSOR_LAYOUT_HPP
+#endif // NABLA_LAYOUTS_LEFT_STRIDED_HPP

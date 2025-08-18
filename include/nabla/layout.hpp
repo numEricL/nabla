@@ -1,5 +1,5 @@
-#ifndef TENSOR_LAYOUT_HPP
-#define TENSOR_LAYOUT_HPP
+#ifndef NABLA_LAYOUT_HPP
+#define NABLA_LAYOUT_HPP
 
 namespace nabla {
 
@@ -17,6 +17,6 @@ std::ostream& operator<<(std::ostream& os, std::array<T, N> arr) {
 
 } // namespace nabla
 
-#include "./layouts/left_strided.hpp"
+#include "nabla/layouts/left_strided.hpp"
 
-#endif // TENSOR_LAYOUT_HPP
+#endif // NABLA_LAYOUT_HPP

@@ -1,12 +1,12 @@
-#ifndef TENSOR_OSTREAM_HPP
-#define TENSOR_OSTREAM_HPP
+#ifndef NABLA_OSTREAM_HPP
+#define NABLA_OSTREAM_HPP
 
 #include <iomanip>
 #include <limits>
 #include <ostream>
 #include <string>
 #include <type_traits>
-#include "nabla/tensor.hpp"
+#include "nabla/tensor/tensor.hpp"
 #include "utility/complex.hpp"
 
 namespace nabla {
@@ -53,9 +53,9 @@ cfp shrink(cfp x, int64_t eps_factor = 100) {
 } // namespace detail
 
 template <typename LayoutT>
-requires layout_rank2<LayoutT>
+requires IsLayoutRankN<LayoutT,2>
 std::ostream& operator<<(std::ostream& out, const LayoutT& layout) {
-    using Index = typename LayoutT::Index;
+    using Index = layout_traits<LayoutT>::index_type;
     auto fmt = detail::get_format<Index>();
 
     auto m = layout.dimensions()[0];
@@ -83,9 +83,9 @@ std::ostream& operator<<(std::ostream& out, const LayoutT& layout) {
     return out;
 }
 
-template <typename T, Rank rank, typename LayoutT>
-std::ostream& operator<<(std::ostream& out, Tensor<const T, rank, LayoutT> t) {
-    using Index = typename LayoutT::Index;
+template <typename T, typename LayoutT>
+std::ostream& operator<<(std::ostream& out, Tensor<const T, 2, LayoutT> t) {
+    using Index = layout_traits<LayoutT>::index_type;
     auto fmt = detail::get_format<T>();
 
     auto m = t.dimensions()[0];
@@ -95,7 +95,7 @@ std::ostream& operator<<(std::ostream& out, Tensor<const T, rank, LayoutT> t) {
         out << "[";
         for (Index col = 0; col < std::min<int>(n, fmt.max_cols); ++col) {
             out << std::scientific << std::setprecision(fmt.precision)
-               << std::setw(fmt.width) << t({row, col});
+               << std::setw(fmt.width) << t(row, col);
             if (col < n - 1 && col < fmt.max_cols - 1) {
                 out << ", ";
             }
@@ -115,4 +115,4 @@ std::ostream& operator<<(std::ostream& out, Tensor<const T, rank, LayoutT> t) {
 
 } // namespace nabla
 
-#endif // TENSOR_OSTREAM_HPP
+#endif // NABLA_OSTREAM_HPP

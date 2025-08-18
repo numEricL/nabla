@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
-#include "nabla/tensor.hpp"
+#include <numeric>
+#include "nabla/nabla.hpp"
 
 using namespace nabla;
 
@@ -15,12 +16,10 @@ int main() {
 
     LayoutT layout({2, 3});
     std::vector<int> data(layout.mem_size());
-
-    for (auto i = 0; i < layout.mem_size(); ++i) {
-       data[i] = i + 1;
-    }
     TensorT t(data, layout);
-    std::cout << t({0, 0}) << std::endl;
+    std::iota(t.begin(), t.end(), 1); // fill with 1, 2, ..., 6
+
+    std::cout << t(0, 0) << std::endl;
 
     std::cout << "tensor: " << std::endl;
     std::cout << t << std::endl;
@@ -31,7 +30,7 @@ int main() {
      if (t.dimensions()[0] != 2 || t.dimensions()[1] != 3) {
         std::cerr << "dimensions() failed\n";
      }
-     if (t({0, 0}) != 1 || t({1, 0}) != 2 || t({1, 2}) != 6) {
+     if (t(0, 0) != 1 || t(1, 0) != 2 || t(1, 2) != 6) {
         std::cerr << "operator() failed\n";
      }
      if (t[0] != 1 || t[5] != 6) {
@@ -41,10 +40,10 @@ int main() {
         std::cerr << "pointer() failed\n";
      }
 
-     LayoutT::Subscript sub_dims = {1, 2};
-     LayoutT::Subscript sub_offset = {1, 0};
+     LayoutT::subscript_type sub_dims = {1, 2};
+     LayoutT::subscript_type sub_offset = {1, 0};
      auto sub = t.subtensor(sub_dims, sub_offset);
-     if (sub.size() != 2 || sub({0, 0}) != 2 || sub({0, 1}) != 4) {
+     if (sub.size() != 2 || sub(0, 0) != 2 || sub(0, 1) != 4) {
          std::cerr << "subtensor failed\n";
         return 1;
      }
@@ -52,4 +51,3 @@ int main() {
      std::cout << "All tensor tests passed.\n";
     return 0;
 }
-
