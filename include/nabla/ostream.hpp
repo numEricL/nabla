@@ -83,9 +83,10 @@ std::ostream& operator<<(std::ostream& out, const LayoutT& layout) {
     return out;
 }
 
-template <typename T, typename LayoutT>
-std::ostream& operator<<(std::ostream& out, Tensor<const T, 2, LayoutT> t) {
-    using Index = layout_traits<LayoutT>::index_type;
+template <typename T>
+    requires IsExprCompatible<T> && IsRankN<T, 2>
+std::ostream& operator<<(std::ostream& out, const T& t) {
+    using Index = T::index_type;
     auto fmt = detail::get_format<T>();
 
     auto m = t.dimensions()[0];

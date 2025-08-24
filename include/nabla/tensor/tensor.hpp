@@ -9,17 +9,19 @@
 namespace nabla {
 
 template <typename T, Rank rank, typename LayoutT = layout::LeftStrided<rank>>
-requires IsLayoutRankN<LayoutT, rank>
+    requires IsLayoutRankN<LayoutT, rank>
 class Tensor;
 
-template <typename T, Rank rank, typename LayoutT>
-requires IsLayoutRankN<LayoutT, rank>
-class Tensor<const T, rank, LayoutT> {
-    protected:
+template <typename T, Rank rank_, typename LayoutT>
+    requires IsLayoutRankN<LayoutT, rank_>
+class Tensor<const T, rank_, LayoutT> {
+    public:
+        static constexpr Rank rank = rank_;
         using index_type = typename tensor_traits<Tensor>::index_type;
         using subscript_type = typename tensor_traits<Tensor>::subscript_type;
         using subscript_cref_type = typename tensor_traits<Tensor>::subscript_cref_type;
 
+    protected:
         T* _ptr = nullptr; // class must ensure const-like access
         index_type _offset = 0;
         LayoutT _layout;
@@ -40,7 +42,7 @@ class Tensor<const T, rank, LayoutT> {
 
         template <Rank r>
         index_type dimension() const {
-            static_assert(r < rank, "Dimension out of bounds");
+            static_assert(r < rank_, "Dimension out of bounds");
             return _layout.dimensions()[r];
         }
 
@@ -79,7 +81,7 @@ class Tensor<const T, rank, LayoutT> {
         }
 
         template <typename... Args>
-            requires (sizeof...(Args) == rank) &&
+            requires (sizeof...(Args) == rank_) &&
             (std::conjunction_v<std::is_convertible<Args, index_type>...>)
         const T& operator()(Args... args) const {
             subscript_type indices{static_cast<index_type>(std::forward<Args>(args))...};
@@ -99,15 +101,17 @@ class Tensor<const T, rank, LayoutT> {
         }
 };
 
-template <typename T, Rank rank, typename LayoutT>
-requires IsLayoutRankN<LayoutT, rank>
-class Tensor : public Tensor<const T, rank, LayoutT> {
-    protected:
+template <typename T, Rank rank_, typename LayoutT>
+    requires IsLayoutRankN<LayoutT, rank_>
+class Tensor : public Tensor<const T, rank_, LayoutT> {
+    public:
+        static constexpr Rank rank = rank_;
         using index_type = typename tensor_traits<Tensor>::index_type;
         using subscript_type = typename tensor_traits<Tensor>::subscript_type;
         using subscript_cref_type = typename tensor_traits<Tensor>::subscript_cref_type;
 
-        using base_t = Tensor<const T, rank, LayoutT>;
+    protected:
+        using base_t = Tensor<const T, rank_, LayoutT>;
         using base_t::_ptr;
         using base_t::_offset;
         using base_t::_layout;
@@ -133,9 +137,7 @@ class Tensor : public Tensor<const T, rank, LayoutT> {
 
         void swap(Tensor& t) { std::swap(*this, t); }
         void swap(Tensor&& t) { std::swap(*this, t); }
-        void shrink(subscript_cref_type dimensions, subscript_cref_type offset = {}) {
-            swap(subtensor(dimensions, offset));
-        }
+        using base_t::shrink;
 
         T* pointer() const {
             return (_ptr ? _ptr + _offset : nullptr);
@@ -146,9 +148,9 @@ class Tensor : public Tensor<const T, rank, LayoutT> {
         }
 
         template <typename... Args>
-            requires (sizeof...(Args) == rank) &&
+            requires (sizeof...(Args) == rank_) &&
             (std::conjunction_v<std::is_convertible<Args, index_type>...>)
-        T& operator()(Args... args) {
+        T& operator()(Args... args) const {
             subscript_type indices{static_cast<index_type>(std::forward<Args>(args))...};
             return pointer()[_layout(indices)];
         }
@@ -164,6 +166,23 @@ class Tensor : public Tensor<const T, rank, LayoutT> {
         Iterator end() const {
             return Iterator(*this, this->size());
         }
+
+        // unoptimized assignement operator
+        template <typename U>
+            requires IsExprCompatible<U>
+        Tensor& operator=(const U& other) {
+            if (reinterpret_cast<const void*>(this) == reinterpret_cast<const void*>(&other)) {
+                return *this;
+            }
+            if (this->size() != other.size()) {
+                throw std::runtime_error("Tensor assignment: size mismatch");
+            }
+            for (index_type i = 0; i < this->size(); ++i) {
+                operator[](i) = other[i];
+            }
+            return *this;
+        }
+
 };
 
 } // namespace nabla
