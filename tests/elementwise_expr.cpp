@@ -1,6 +1,7 @@
 #include <cassert>
 #include <iostream>
 #include "nabla/nabla.hpp"
+#include "utility/utility.hpp"
 
 int main() {
     using nabla::Tensor;
@@ -26,11 +27,19 @@ int main() {
             b(i, j) = static_cast<float>(i * j);
         }
     }
-
     // Elementwise addition
     c = a + b;
+    auto expr = a + b + c;
+    auto inputs = expr.inputs();
+
+    std::cout << "a b c" << "\n";
+    utility::for_each_in_tuple(inputs, [](const auto& t) {
+        std::cout << *t << "\n";
+    });
+
     std::cout << c << "\n";
-    std::cout << a + b << "\n";
+    std::cout << expr << "\n";
+
 
     //// Elementwise multiplication
     //d = a * b;
