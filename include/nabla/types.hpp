@@ -2,7 +2,6 @@
 #define NABLA_TYPES_HPP
 
 using Rank = int;
-
 struct LayoutTag {};
 struct ExprTag {};
 struct ElementwiseExprTag : ExprTag {};

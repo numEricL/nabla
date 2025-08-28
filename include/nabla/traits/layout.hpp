@@ -27,7 +27,7 @@ struct layout_traits : layout_traits_impl<std::remove_cvref_t<T>> {};
 //
 
 template <typename T>
-concept IsLayout = std::is_base_of_v<LayoutTag, T>;
+concept IsLayout = std::is_base_of_v<LayoutTag, T> && requires { typename layout_traits<T>; };
 
 template <typename T, Rank rank>
 concept IsLayoutRankN = 

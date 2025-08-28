@@ -72,8 +72,20 @@ class LeftStrided : LayoutTag {
             return _dimensions;
         }
 
+        template <Rank r>
+        index_type dimension() const {
+            static_assert(0 <= r && r < rank_, "Dimension out of bounds");
+            return _dimensions[r];
+        }
+
         subscript_cref_type strides() const {
             return _strides;
+        }
+
+        template <Rank r>
+        index_type stride() const {
+            static_assert(0 <= r && r < rank_, "Dimension out of bounds");
+            return _strides[r];
         }
 
         index_type size() const {

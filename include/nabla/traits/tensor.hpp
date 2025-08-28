@@ -41,6 +41,9 @@ struct tensor_traits : tensor_traits_impl<std::remove_cvref_t<T>> {};
 template <typename T>
 concept IsTensor = tensor_traits<T>::value;
 
+template <typename T, Rank rank>
+concept IsTensorRankN = IsTensor<T> && (tensor_traits<T>::rank == rank);
+
 template <typename T1, typename T2>
 concept IsSameRankTensors =
 IsTensor<T1> && IsTensor<T2> &&

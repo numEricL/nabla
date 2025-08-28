@@ -2,7 +2,7 @@
 #define NABLA_TENSOR_TENSOR_HPP
 
 #include <vector>
-#include "nabla/layout.hpp"
+#include "nabla/layouts.hpp"
 #include "nabla/traits.hpp"
 #include "nabla/tensor/iterator.hpp"
 
@@ -28,6 +28,10 @@ class Tensor<const T, rank_, LayoutT> {
 
     public:
 
+        const LayoutT& layout() const {
+            return _layout;
+        }
+
         index_type size() const {
             return _layout.size();
         }
@@ -42,8 +46,7 @@ class Tensor<const T, rank_, LayoutT> {
 
         template <Rank r>
         index_type dimension() const {
-            static_assert(r < rank_, "Dimension out of bounds");
-            return _layout.dimensions()[r];
+            return _layout.template dimension<r>();
         }
 
         // constructors

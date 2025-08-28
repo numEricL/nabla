@@ -1,5 +1,5 @@
-#ifndef NABLA_LAYOUT_HPP
-#define NABLA_LAYOUT_HPP
+#ifndef NABLA_LAYOUTS_HPP
+#define NABLA_LAYOUTS_HPP
 
 namespace nabla {
 
@@ -19,4 +19,4 @@ std::ostream& operator<<(std::ostream& os, std::array<T, N> arr) {
 
 #include "nabla/layouts/left_strided.hpp"
 
-#endif // NABLA_LAYOUT_HPP
+#endif // NABLA_LAYOUTS_HPP
