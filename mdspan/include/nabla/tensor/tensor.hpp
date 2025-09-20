@@ -3,8 +3,8 @@
 
 #include "mdspan/mdspan.hpp"
 #include "nabla/types.hpp"
-#include "nabla/left_strided.hpp"
-#include "nabla/tensor_iterator.hpp"
+#include "nabla/layouts/left_strided.hpp"
+#include "nabla/tensor/iterator.hpp"
 
 namespace nabla {
 
@@ -191,6 +191,7 @@ class Tensor<const T, Extents, LayoutPolicy, AccessorPolicy> {
         constexpr Tensor(const Tensor&) = default;
         constexpr Tensor(Tensor&&) = default;
 
+    // Subtensor constructors
     protected:
         explicit constexpr Tensor(const Tensor& parent, const extents_type& extents)
             : _mdspan(parent._mdspan.data_handle(), mapping_type(parent.mapping().submap(extents)), parent._mdspan.accessor()) {}
@@ -353,6 +354,7 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
         constexpr Tensor(const Tensor&) = default;
         constexpr Tensor(Tensor&&) = default;
 
+    // Subtensor constructors
     protected:
         explicit constexpr Tensor(const Tensor& parent, const extents_type& extents)
             : base_type(parent, extents) {}

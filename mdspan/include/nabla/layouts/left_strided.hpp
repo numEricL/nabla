@@ -5,7 +5,8 @@
 #include <sstream>
 #include <stacktrace>
 #include <stdexcept>
-#include "nabla/types.hpp" // for dims
+#include "nabla/types.hpp" // for is_extents_v
+
 
 // TODO: remove _to_array and replace with fold expression in operator()
 
@@ -274,8 +275,6 @@ struct LeftStrided {
 
     }; // class mapping
 }; // struct LeftStrided
-
-
 
 } // namespace nabla
 

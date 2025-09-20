@@ -6,7 +6,8 @@
 #include <ostream>
 #include <string>
 #include <type_traits>
-#include "left_strided.hpp"
+
+#include "nabla/layouts/left_strided.hpp" // remove once we support all layouts
 
 namespace nabla {
 namespace detail {

@@ -3,7 +3,7 @@
 
 #include <array>
 #include "mdspan/mdspan.hpp"
-#include "nabla/left_strided.hpp"
+#include "nabla/layouts/left_strided.hpp"
 
 int main() {
 

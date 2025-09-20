@@ -5,7 +5,7 @@
 #include <array>
 #include <iostream>
 #include "mdspan/mdspan.hpp"
-#include "nabla/left_strided.hpp"
+#include "nabla/layouts/left_strided.hpp"
 
 template <typename MapT>
     requires (MapT::extents_type::rank() == 2)

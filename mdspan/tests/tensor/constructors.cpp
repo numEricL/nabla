@@ -6,7 +6,7 @@
 #include <array>
 #include <span>
 #include "mdspan/mdspan.hpp"
-#include "nabla/tensor.hpp"
+#include "nabla/nabla.hpp"
 #include "nabla/ostream.hpp"
 
 int main() {
