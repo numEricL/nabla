@@ -1,11 +1,12 @@
-#ifndef NABLA_LEFT_STRIDED_HPP
-#define NABLA_LEFT_STRIDED_HPP
+#ifndef NABLA_LAYOUTS_LEFT_STRIDED_HPP
+#define NABLA_LAYOUTS_LEFT_STRIDED_HPP
 
 #include <array>
 #include <sstream>
 #include <stacktrace>
 #include <stdexcept>
 #include "nabla/types.hpp" // for is_extents_v
+//#include "nabla/traits.hpp"
 
 
 // TODO: remove _to_array and replace with fold expression in operator()
@@ -278,4 +279,4 @@ struct LeftStrided {
 
 } // namespace nabla
 
-#endif // NABLA_LEFT_STRIDED_HPP
+#endif // NABLA_LAYOUTS_LEFT_STRIDED_HPP

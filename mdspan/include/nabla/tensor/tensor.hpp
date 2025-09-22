@@ -9,29 +9,14 @@
 namespace nabla {
 
 template <typename T>
-struct default_accessor;
-
-template <
-typename T,
-         typename Extents,
-         typename LayoutPolicy = nabla::LeftStrided,
-         typename AccessorPolicy = default_accessor<T>
-         >
-class Tensor;
-
-template <typename T>
-class default_accessor;
-
-template <typename T>
 class default_accessor<const T> {
     public:
         using offset_policy = default_accessor;
         using element_type = const T;
         using reference = const T&;
         using data_handle_type = const T*;
-
-        template <typename U>
-        using rebind = default_accessor<U>;
+        using read_accessor_type = default_accessor<const T>;
+        using write_accessor_type = default_accessor<T>;
 
         constexpr default_accessor() noexcept = default;
 
@@ -64,9 +49,8 @@ class default_accessor : default_accessor<const T> {
         using element_type = T;
         using reference = T&;
         using data_handle_type = T*;
-
-        template <typename U>
-            using rebind = default_accessor<U>;
+        using read_accessor_type = default_accessor<const T>;
+        using write_accessor_type = default_accessor<T>;
 
         constexpr default_accessor() noexcept = default;
 
@@ -105,7 +89,7 @@ class Tensor<const T, Extents, LayoutPolicy, AccessorPolicy> {
     //
     protected:
         // non-const data view
-        using write_accessor_type = typename AccessorPolicy::template rebind<T>;
+        using write_accessor_type = AccessorPolicy::write_accessor_type;
         using mdspan_type = mdspan_ns::mdspan<T, Extents, LayoutPolicy, write_accessor_type>;
         mdspan_type _mdspan;
 
@@ -122,14 +106,13 @@ class Tensor<const T, Extents, LayoutPolicy, AccessorPolicy> {
         using rank_type    = extents_type::rank_type;
 
         using layout_type  = LayoutPolicy;
-        using mapping_type =  layout_type::template mapping<extents_type>;
+        using mapping_type = layout_type::template mapping<extents_type>;
 
-        //using accessor_type    = typename AccessorPolicy::template rebind<const T>;
         using accessor_type    = AccessorPolicy;
         using reference        = typename accessor_type::reference;
         using data_handle_type = typename accessor_type::data_handle_type;
 
-        using coord_type = std::array<index_type, mdspan_type::rank()>;
+        using coord_type    = std::array<index_type, mdspan_type::rank()>;
         using iterator_type = TensorIterator<Tensor>;
 
     //
@@ -260,10 +243,10 @@ template <
     typename LayoutPolicy,
     typename AccessorPolicy
 >
-class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPolicy::template rebind<const T>> {
+class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPolicy::read_accessor_type> {
 
     public:
-        using base_type = Tensor<std::add_const_t<T>, Extents, LayoutPolicy, typename AccessorPolicy::template rebind<const T>>;
+        using base_type = Tensor<std::add_const_t<T>, Extents, LayoutPolicy, typename AccessorPolicy::read_accessor_type>;
 
     //
     // Data members
@@ -276,21 +259,21 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
     //
     public:
         using element_type = T;
-        using value_type = std::remove_cv_t<T>;
+        using value_type   = std::remove_cv_t<T>;
 
         using extents_type = typename base_type::extents_type;
-        using index_type = typename base_type::index_type;
-        using size_type = typename base_type::size_type;
-        using rank_type = typename base_type::rank_type;
+        using index_type   = typename base_type::index_type;
+        using size_type    = typename base_type::size_type;
+        using rank_type    = typename base_type::rank_type;
 
-        using layout_type = typename base_type::layout_type;
+        using layout_type  = typename base_type::layout_type;
         using mapping_type = typename base_type::mapping_type;
 
-        using accessor_type = AccessorPolicy;
+        using accessor_type    = AccessorPolicy;
         using reference        = typename accessor_type::reference;
         using data_handle_type = typename accessor_type::data_handle_type;
 
-        using coord_type = typename base_type::coord_type;
+        using coord_type    = typename base_type::coord_type;
         using iterator_type = TensorIterator<Tensor>;
 
     //
@@ -393,15 +376,48 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
     //
     // Operator =
     //
+    public:
+        // TODO: remove in favor of iterator-based assignment
+        index_type flat_index(index_type idx) const {
+            coord_type indices;
+            for (index_type i = rank() - 1; i > 0; --i) {
+                indices[i] = idx / mapping().stride(i);
+                idx -= indices[i] * mapping().stride(i);
+            }
+            indices[0] = idx / mapping().stride(0);
+            return std::apply(mapping(), indices);
+        }
+
+        // TODO: remove in favor of iterator-based assignment
+        T& operator[](index_type idx) const {
+            return accessor().access(data_handle(), flat_index(idx));
+        }
+
+        // TODO: add runtime debug assert on extents match
+        template <typename U>
+            requires IsExprCompatible<U>
+        Tensor& operator=(const U& other) {
+            for (size_type i = 0; i < this->size(); ++i) {
+                operator[](i) = other[i];
+            }
+            return *this;
+        }
+
+        // TODO: add runtime debug assert on extents match
+        // compiler deletes this assignment operator if not explicitly defined
         Tensor& operator=(const Tensor& other) {
-            if (this != &other) {
-                // TODO: debug assert
-                if (this->extents() != other.extents()) {
-                    throw std::runtime_error("Tensor assignment: extents mismatch");
-                }
+            if (static_cast<const void*>(this) != static_cast<const void*>(&other)) {
                 std::copy(other.begin(), other.end(), this->begin());
             }
             return *this;
+        }
+
+        Tensor& operator=(Tensor&& other) {
+            this->_mdspan = std::move(other._mdspan);
+        }
+
+        Tensor& operator=(base_type&& other) {
+            this->_mdspan = std::move(other._mdspan);
         }
 
     //

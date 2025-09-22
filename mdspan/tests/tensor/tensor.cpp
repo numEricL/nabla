@@ -8,12 +8,9 @@
 #include "nabla/nabla.hpp"
 #include "nabla/ostream.hpp"
 
-template <size_t N>
-using dims = Kokkos::dextents<size_t, N>;
-
 template <typename TensorT>
     requires (TensorT::rank() == 2)
-int test_assignment(TensorT& mat) {
+int test_access(TensorT& mat) {
     using coord_type = typename TensorT::coord_type;
     coord_type dims {mat.extent(0), mat.extent(1)};
     coord_type sub_dims = {dims[0]/2, dims[1]/2};
@@ -59,16 +56,43 @@ int test_assignment(TensorT& mat) {
     return 0;
 }
 
+template <typename TensorT>
+    requires (TensorT::rank() == 2)
+int test_assignment(TensorT& mat1, TensorT& mat2) {
+    size_t counter = 0;
+    for (auto iter = mat1.begin(); iter != mat1.end(); ++iter) {
+        *iter = counter++;
+    }
+    for (auto iter = mat2.begin(); iter != mat2.end(); ++iter) {
+        *iter = 0;
+    }
+    mat2 = mat1;
+    for (size_t j = 0; j < mat1.extent(1); ++j) {
+        for (size_t i = 0; i < mat1.extent(0); ++i) {
+            if (mat1(i,j) != mat2(i,j)) {
+                std::cerr << "Error in assignment test at (" << i << "," << j << "): expected "
+                          << mat1(i,j) << ", got " << mat2(i,j) << "\n";
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 int main() {
     using Layout = nabla::LeftStrided;
-    using TensorType = nabla::Tensor<int, dims<2>, Layout>;
+    using TensorType = nabla::Tensor<int, nabla::dims<2>, Layout>;
 
-    Layout::mapping<dims<2>> map({4,4}, {1,10});
-    std::vector<int> data(map.required_span_size());
-    TensorType mat(data.data(), map);
+    Layout::mapping<nabla::dims<2>> map1({4,4}, {1,10});
+    Layout::mapping<nabla::dims<2>> map2({4,4});
+    std::vector<int> data1(map1.required_span_size());
+    std::vector<int> data2(map2.required_span_size());
+    TensorType mat1(data1.data(), map1);
+    TensorType mat2(data2.data(), map2);
 
     int error_count = 0;
-    error_count += test_assignment(mat);
+    error_count += test_access(mat1);
+    error_count += test_assignment(mat1, mat2);
 
     if (error_count == 0) {
         std::cout << "All tests passed!" << std::endl;
