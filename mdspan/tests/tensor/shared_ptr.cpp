@@ -4,7 +4,7 @@
 #include "mdspan/mdspan.hpp"
 #include <memory>
 #include <iostream>
-#include "tensor.hpp"
+#include "nabla/nabla.hpp"
 
 template<typename T>
 void print2d(const T& span) {
@@ -32,6 +32,11 @@ class shared_ptr_accessor {
         using element_type = T;
         using reference = T&;
         using data_handle_type = std::shared_ptr<T[]>;
+        using read_accessor_type = shared_ptr_accessor<const T>;
+        using write_accessor_type = shared_ptr_accessor<std::remove_const_t<T>>;
+        using write_handle_type = std::shared_ptr<std::remove_const_t<T>[]>;
+
+        constexpr shared_ptr_accessor() noexcept = default;
 
         constexpr reference access(data_handle_type const& p, std::size_t i) const noexcept {
             return p.get()[i];
@@ -45,16 +50,8 @@ class shared_ptr_accessor {
             return {};
         }
 
-        template <typename U, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
-        friend class Tensor;
-
-        template <typename U>
-        using rebind = shared_ptr_accessor<U>;
-
-    private:
-        using nc_T = std::remove_const_t<T>;
-        static std::shared_ptr<nc_T[]> write_cast(std::shared_ptr<T[]> p) noexcept {
-            return const_pointer_cast<nc_T[]>(p);
+        static write_handle_type write_cast(std::shared_ptr<T[]> p) noexcept {
+            return const_pointer_cast<std::remove_const_t<T>[]>(p);
         }
 };
 
@@ -67,13 +64,13 @@ void shared_ptr_example() {
     for (int i = 0; i < 6; ++i) data[i] = i * 10;
 
     using extents_t = Kokkos::extents<std::size_t, 2, 3>;
-    using layout_t = layout::LeftStrided;
+    using layout_t = nabla::LeftStrided;
 
     using mdspan_t = Kokkos::mdspan<int, extents_t, layout_t, shared_ptr_accessor<int>>;
     using cmdspan_t = Kokkos::mdspan<const int, extents_t, layout_t, shared_ptr_accessor<const int>>;
 
-    using Tensor_t = Tensor<int, extents_t, layout_t, shared_ptr_accessor<int>>;
-    using cTensor_t = Tensor<const int, extents_t, layout_t, shared_ptr_accessor<const int>>;
+    using Tensor_t = nabla::Tensor<int, extents_t, layout_t, shared_ptr_accessor<int>>;
+    using cTensor_t = nabla::Tensor<const int, extents_t, layout_t, shared_ptr_accessor<const int>>;
 
     extents_t exts;
 

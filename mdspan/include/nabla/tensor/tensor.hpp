@@ -11,7 +11,7 @@ namespace nabla {
 template <typename T>
 class default_accessor<const T> {
     public:
-        using offset_policy = default_accessor;
+        //using offset_policy = default_accessor;
         using element_type = const T;
         using reference = const T&;
         using data_handle_type = const T*;
@@ -24,12 +24,12 @@ class default_accessor<const T> {
             requires std::is_convertible_v<OtherElementType(*)[], element_type(*)[]>
         constexpr default_accessor(default_accessor<OtherElementType>) noexcept {}
 
-        constexpr data_handle_type offset(data_handle_type p, size_t i) const noexcept {
-            return p + i;
-        }
-
         constexpr reference access(data_handle_type p, size_t i) const noexcept {
             return p[i];
+        }
+
+        constexpr data_handle_type offset(data_handle_type p, size_t i) const noexcept {
+            return p + i;
         }
 
     private:
@@ -45,7 +45,7 @@ class default_accessor<const T> {
 template <typename T>
 class default_accessor : default_accessor<const T> {
     public:
-        using offset_policy = default_accessor;
+        //using offset_policy = default_accessor;
         using element_type = T;
         using reference = T&;
         using data_handle_type = T*;
@@ -58,12 +58,12 @@ class default_accessor : default_accessor<const T> {
             requires std::is_convertible_v<OtherElementType(*)[], element_type(*)[]>
             constexpr default_accessor(default_accessor<OtherElementType>) noexcept {}
 
-        constexpr data_handle_type offset(data_handle_type p, size_t i) const noexcept {
-            return p + i;
-        }
-
         constexpr reference access(data_handle_type p, size_t i) const noexcept {
             return p[i];
+        }
+
+        constexpr data_handle_type offset(data_handle_type p, size_t i) const noexcept {
+            return p + i;
         }
 };
 
@@ -108,7 +108,7 @@ class Tensor<const T, Extents, LayoutPolicy, AccessorPolicy> {
         using layout_type  = LayoutPolicy;
         using mapping_type = layout_type::template mapping<extents_type>;
 
-        using accessor_type    = AccessorPolicy;
+        using accessor_type    = AccessorPolicy::read_accessor_type;
         using reference        = typename accessor_type::reference;
         using data_handle_type = typename accessor_type::data_handle_type;
 
@@ -269,7 +269,7 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
         using layout_type  = typename base_type::layout_type;
         using mapping_type = typename base_type::mapping_type;
 
-        using accessor_type    = AccessorPolicy;
+        using accessor_type    = AccessorPolicy::write_accessor_type;
         using reference        = typename accessor_type::reference;
         using data_handle_type = typename accessor_type::data_handle_type;
 
