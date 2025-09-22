@@ -24,8 +24,7 @@ namespace nabla {
     >
     class Tensor;
 
-    struct ExprTag {};
-    struct ElementwiseExprTag : ExprTag {};
+    struct ElementwiseExprTag {};
 
     namespace detail {
         template <class T> struct impl_is_extents : ::std::false_type {};

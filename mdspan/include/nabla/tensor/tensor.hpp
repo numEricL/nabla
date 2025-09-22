@@ -395,7 +395,7 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
 
         // TODO: add runtime debug assert on extents match
         template <typename U>
-            requires IsExprCompatible<U>
+            requires IsElementwiseExprCompatible<U>
         Tensor& operator=(const U& other) {
             for (size_type i = 0; i < this->size(); ++i) {
                 operator[](i) = other[i];

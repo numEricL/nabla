@@ -71,7 +71,7 @@ std::ostream& operator<<(std::ostream& os, const typename LeftStrided::mapping<E
 }
 
 template <typename TensorT>
-    requires (IsExprCompatible<TensorT> && TensorT::rank() == 2)
+    requires (IsElementwiseExprCompatible<TensorT> && TensorT::rank() == 2)
 std::ostream& operator<<(std::ostream& os, const TensorT& mat) {
     using T = typename TensorT::value_type;
 

@@ -4,7 +4,7 @@
 #define NABLA_DEBUG
 
 #include "nabla/types.hpp"
-#include "nabla/traits.hpp"
+#include "nabla/concepts.hpp"
 #include "nabla/layouts.hpp"
 #include "nabla/tensor/tensor.hpp"
 #include "nabla/elementwise_expr.hpp"

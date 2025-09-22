@@ -6,8 +6,6 @@
 #include <stacktrace>
 #include <stdexcept>
 #include "nabla/types.hpp" // for is_extents_v
-//#include "nabla/traits.hpp"
-
 
 // TODO: remove _to_array and replace with fold expression in operator()
 
