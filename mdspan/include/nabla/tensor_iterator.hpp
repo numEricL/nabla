@@ -4,14 +4,14 @@
 namespace nabla {
 
 template <typename TensorType>
-    //requires (IsTensor<TensorType>)
+    requires (IsTensor<TensorType>)
 class TensorIterator {
     public:
-        using flat_index_iterator_type = typename TensorType::mapping_type::FlatIndexIterator;
+        using mapping_iterator_type = typename TensorType::mapping_type::iterator_type;
 
     private:
         const TensorType* _tensor;
-        flat_index_iterator_type _flat_iter;
+        mapping_iterator_type _flat_iter;
 
     public:
 
@@ -27,7 +27,7 @@ class TensorIterator {
         TensorIterator(const TensorIterator&) = default;
         TensorIterator(TensorIterator&&) = default;
 
-        TensorIterator(const TensorType* tensor, flat_index_iterator_type flat_iter) 
+        TensorIterator(const TensorType* tensor, mapping_iterator_type flat_iter) 
             : _tensor(tensor), _flat_iter(flat_iter) {}
 
         reference operator*() const {

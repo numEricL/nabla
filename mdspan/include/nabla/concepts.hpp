@@ -42,6 +42,10 @@ concept IsRankN = T::rank() == rank;
 //
 // Expression Iterator Concepts
 //
+template <typename TensorType>
+    requires (IsTensor<TensorType>)
+class TensorIterator;
+
 namespace detail {
 template <class T> struct impl_is_tensor_iterator : std::false_type {};
 

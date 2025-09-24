@@ -11,7 +11,7 @@ namespace nabla {
 
 struct LeftStrided {
     template <typename Extents>
-    class FlatIndexIterator;
+    class LeftStridedIterator;
 
     template <typename Extents>
     class mapping {
@@ -20,6 +20,7 @@ struct LeftStrided {
             using index_type = typename extents_type::index_type;
             using rank_type = typename extents_type::rank_type;
             using coord_type = std::array<index_type, extents_type::rank()>;
+            using iterator_type = LeftStridedIterator<extents_type>;
 
         private:
             static constexpr rank_type _rank = extents_type::rank();
@@ -56,12 +57,15 @@ struct LeftStrided {
                 return strides;
             }
 
-            void _assert_index(const coord_type& indices) const {
+            template <class... Indices>
+                requires(sizeof...(Indices) == _rank)
+            void _assert_index(Indices... indices) const {
+                coord_type idx_arr{static_cast<index_type>(indices)...};
                 for (rank_type i = 0; i < _rank; ++i) {
-                    if (indices[i] < 0 || indices[i] >= _extents.extent(i)) {
+                    if (idx_arr[i] < 0 || idx_arr[i] >= _extents.extent(i)) {
                         std::stringstream ss;
                         ss << "LeftStrided::mapping error: index " << i << " is out of bounds\n"
-                            << "\tindices:     " << temp::to_string(indices) << "\n"
+                            << "\tindices:     " << temp::to_string(idx_arr) << "\n"
                             << "\tupper bound: " << temp::to_string(_extents, -1) << "\n"
                             << "\n\n"
                             << std::stacktrace::current() << std::endl;
@@ -156,10 +160,8 @@ struct LeftStrided {
         public:
             template <class... Indices>
                 requires(sizeof...(Indices) == _rank)
-            constexpr index_type operator()(Indices&&... indices) const {
-                coord_type idx_arr{static_cast<index_type>(indices)...};
-                _assert_index(idx_arr);
-
+            constexpr index_type operator()(Indices... indices) const {
+                _assert_index(indices...);
                 index_type idx = 0;
                 rank_type i = 0;
                 ((idx += indices * stride(i++)), ...);
@@ -176,13 +178,12 @@ struct LeftStrided {
 
             // forward iterator that avoids integer multiplication in
             // incrementer. Constructors still use multiplication.
-            using Iterator = FlatIndexIterator<extents_type>;
-            Iterator begin() const {
-                return FlatIndexIterator(this);
+            iterator_type begin() const {
+                return LeftStridedIterator(this);
             }
 
-            Iterator end() const {
-                return FlatIndexIterator(this, true);
+            iterator_type end() const {
+                return LeftStridedIterator(this, true);
             }
 
     }; // class mapping

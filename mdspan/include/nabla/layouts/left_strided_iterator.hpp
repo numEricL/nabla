@@ -6,7 +6,7 @@ namespace nabla {
 // forward iterator that avoids integer multiplication in
 // incrementer. Constructors still use multiplication.
 template <typename Extents>
-class LeftStrided::FlatIndexIterator {
+class LeftStrided::LeftStridedIterator {
     using mapping_type = LeftStrided::mapping<Extents>;
     using extents_type = typename mapping_type::extents_type;
     using index_type = typename mapping_type::index_type;
@@ -26,40 +26,40 @@ public:
     using pointer = void;
     using iterator_category = std::forward_iterator_tag;
 
-    FlatIndexIterator() = default;
+    LeftStridedIterator() = default;
 
     // begin iterator constructor
-    FlatIndexIterator(const mapping_type* mapping)
+    LeftStridedIterator(const mapping_type* mapping)
         : _mapping(mapping) {}
 
     // end iterator constructor
-    FlatIndexIterator(const mapping_type* mapping, bool)
+    LeftStridedIterator(const mapping_type* mapping, bool)
         : _mapping(mapping), _flat_index(mapping->required_span_size()) {}
 
     // middle iterator constructor
-    FlatIndexIterator(const mapping_type* mapping, coord_type indices)
+    LeftStridedIterator(const mapping_type* mapping, coord_type indices)
         : _mapping(mapping), _indices(indices), _flat_index(mapping->operator()(indices)) {}
 
     reference operator*() const {
         return _flat_index;
     }
 
-    FlatIndexIterator& operator++() {
+    LeftStridedIterator& operator++() {
         increment();
         return *this;
     }
 
-    FlatIndexIterator operator++(int) {
-        FlatIndexIterator tmp = *this;
+    LeftStridedIterator operator++(int) {
+        LeftStridedIterator tmp = *this;
         ++(*this);
         return tmp;
     }
 
-    bool operator==(const FlatIndexIterator& other) const {
+    bool operator==(const LeftStridedIterator& other) const {
         return _flat_index == other._flat_index;
     }
 
-    bool operator!=(const FlatIndexIterator& other) const {
+    bool operator!=(const LeftStridedIterator& other) const {
         return !(*this == other);
     }
 
