@@ -24,6 +24,8 @@ class TensorIterator {
         //using iterator_concept = std::forward_iterator<TensorIterator>;
 
         TensorIterator() = default;
+        TensorIterator(const TensorIterator&) = default;
+        TensorIterator(TensorIterator&&) = default;
 
         TensorIterator(const TensorType* tensor, flat_index_iterator_type flat_iter) 
             : _tensor(tensor), _flat_iter(flat_iter) {}

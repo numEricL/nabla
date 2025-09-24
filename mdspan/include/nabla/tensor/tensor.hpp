@@ -377,38 +377,66 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
     // Operator =
     //
     public:
-        // TODO: remove in favor of iterator-based assignment
-        index_type flat_index(index_type idx) const {
-            coord_type indices;
-            for (index_type i = rank() - 1; i > 0; --i) {
-                indices[i] = idx / mapping().stride(i);
-                idx -= indices[i] * mapping().stride(i);
-            }
-            indices[0] = idx / mapping().stride(0);
-            return std::apply(mapping(), indices);
-        }
-
-        // TODO: remove in favor of iterator-based assignment
-        T& operator[](index_type idx) const {
-            return accessor().access(data_handle(), flat_index(idx));
-        }
+        //// TODO: remove in favor of iterator-based assignment
+        //index_type flat_index(index_type idx) const {
+        //    coord_type logical_strides = [](extents_type exts) {
+        //        coord_type strides;
+        //        int stride = 1;
+        //        for (int i = 0; i < rank(); ++i) {
+        //            strides[i] = stride;
+        //            stride *= exts.extent(i);
+        //        }
+        //        return strides;
+        //    }(extents());
+        //    coord_type indices;
+        //    for (index_type i = rank() - 1; i > 0; --i) {
+        //        indices[i] = idx / logical_strides[i];
+        //        idx -= indices[i] * logical_strides[i];
+        //    }
+        //    indices[0] = idx;
+        //    return std::apply(mapping(), indices);
+        //}
+        //
+        //// TODO: remove in favor of iterator-based assignment
+        //T& operator[](index_type idx) const {
+        //    return accessor().access(data_handle(), flat_index(idx));
+        //}
 
         // TODO: add runtime debug assert on extents match
         template <typename U>
             requires IsElementwiseExprCompatible<U>
         Tensor& operator=(const U& other) {
-            for (size_type i = 0; i < this->size(); ++i) {
-                operator[](i) = other[i];
+            // for (size_type i = 0; i < this->size(); ++i) {
+            //    operator[](i) = other[i];
+            // }
+            // return *this;
+
+            auto it = begin();
+            auto end_it = end();
+            auto other_it = other.begin();
+            for (; it != end_it; ++it, ++other_it) {
+                *it = *other_it;
             }
             return *this;
         }
 
+        // TODO: optimize
         // TODO: add runtime debug assert on extents match
         // compiler deletes this assignment operator if not explicitly defined
         Tensor& operator=(const Tensor& other) {
             if (static_cast<const void*>(this) != static_cast<const void*>(&other)) {
-                std::copy(other.begin(), other.end(), this->begin());
+                auto it = begin();
+                auto end_it = end();
+                auto other_it = other.begin();
+                for (; it != end_it; ++it, ++other_it) {
+                    *it = *other_it;
+                }
+                return *this;
             }
+
+            //if (static_cast<const void*>(this) != static_cast<const void*>(&other)) {
+            //    std::copy(other.begin(), other.end(), this->begin());
+            //}
             return *this;
         }
 

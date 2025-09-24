@@ -1,7 +1,11 @@
-#include <functional>
-#include <utility>
+#ifndef NABLA_ELEMENTWISE_EXPR_HPP
+#define NABLA_ELEMENTWISE_EXPR_HPP
+
+#include <functional> // for std::plus, etc.
+#include <utility> // for std::index_sequence
 #include <tuple>
 #include "nabla/concepts.hpp"
+#include "nabla/elementwise_expr_iterator.hpp"
 
 // TODO: enforce invariants e.g. rank, dimensions, fp type
 
@@ -66,10 +70,11 @@ class ExprElementWiseOp : public ElementwiseExprTag {
         //
         // Constructors
         //
-        ExprElementWiseOp(Op op, const Inputs&... inputs)
+
+         ExprElementWiseOp(const Op& op, const Inputs&... inputs)
             : _op(op), _inputs(inputs...) {}
 
-        ExprElementWiseOp(Op op, Inputs&&... inputs)
+         ExprElementWiseOp(Op&& op, Inputs&&... inputs)
             : _op(std::move(op)), _inputs(std::move(inputs)...) {}
 
         // TODO: remove in favor of iterator-based access
@@ -94,6 +99,32 @@ class ExprElementWiseOp : public ElementwiseExprTag {
 
         auto inputs() {
             return collect_leaf_ptrs(*this);
+        }
+
+        auto begin() const {
+            return std::apply(
+                [&](const auto&... inputs) {
+                    return ExprIterator<op_type, decltype(inputs.begin())...>{
+                        _op, inputs.begin()...
+                    };
+                },
+                _inputs
+            );
+        }
+
+        auto end() const {
+            // only first iterator is instantiated to end(), the rest are default-constructed
+            // operator== and operator!= only compare the first iterator
+            return std::apply(
+                [&](const auto& first_input, const auto&... rest_inputs) {
+                    return ExprIterator<op_type, decltype(first_input.end()), decltype(rest_inputs.begin())...>{
+                        _op,
+                            first_input.end(),
+                            decltype(rest_inputs.begin()){}... // default-constructed
+                    };
+                },
+                _inputs
+            );
         }
 };
 
@@ -137,3 +168,5 @@ auto operator-(In1&& input1) {
 }
 
 } // namespace nabla
+
+#endif // NABLA_ELEMENTWISE_EXPR_HPP

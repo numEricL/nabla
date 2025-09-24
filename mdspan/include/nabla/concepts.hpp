@@ -39,6 +39,28 @@ concept IsElementwiseExprCompatible = IsTensor<T> ||
 template <typename T, T::rank_type rank>
 concept IsRankN = T::rank() == rank;
 
+//
+// Expression Iterator Concepts
+//
+namespace detail {
+template <class T> struct impl_is_tensor_iterator : std::false_type {};
+
+template <typename TensorType>
+    struct impl_is_tensor_iterator<TensorIterator<TensorType>> : std::true_type {};
+} // namespace detail
+
+template <typename T>
+concept IsTensorIterator = detail::impl_is_tensor_iterator<std::remove_cvref_t<T>>::value;
+
+struct ExprIteratorTag {};
+
+template <typename T>
+concept IsExprIterator = std::is_base_of_v<ExprIteratorTag, T>;
+
+template <typename T>
+concept IsExprIteratorCompatible = IsTensorIterator<T> ||
+std::is_base_of_v<ExprIteratorTag, T>;
+
 } // namespace nabla
 
 #endif // NABLA_CONCEPTS_HPP
