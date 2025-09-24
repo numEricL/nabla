@@ -5,167 +5,68 @@
 #include <sstream>
 #include <stacktrace>
 #include <stdexcept>
-#include "nabla/traits.hpp"
+#include "nabla/types.hpp" // for is_extents_v
 
 namespace nabla {
-namespace layout {
 
-template <Rank rank_>
-class LeftStrided : LayoutTag {
-    public:
-        static constexpr Rank rank = rank_;
-        using index_type = size_t;
-        using subscript_type = std::array<index_type, rank>;
-        // using subscript_cref_type = const subscript_type&;
-        using subscript_cref_type = subscript_type;
+struct LeftStrided {
+    template <typename Extents>
+    class LeftStridedIterator;
 
-    private:
-        subscript_type _dimensions;
-        subscript_type _strides;
+    template <typename Extents>
+    class mapping {
+        public:
+            using extents_type = Extents;
+            using index_type = typename extents_type::index_type;
+            using rank_type = typename extents_type::rank_type;
+            using coord_type = std::array<index_type, extents_type::rank()>;
+            using iterator_type = LeftStridedIterator<extents_type>;
 
-        subscript_type _default_strides(subscript_cref_type dimensions) const {
-            subscript_type strides;
-            index_type stride = 1;
-            for (Rank i = 0; i < rank; ++i) {
-                strides[i] = stride;
-                stride *= dimensions[i];
-            }
-            return strides;
-        }
+        private:
+            static constexpr rank_type _rank = extents_type::rank();
+            static constexpr rank_type _stride_rank_dynamic = extents_type::rank();
 
-        void _assert_index(subscript_cref_type indices) const {
-            for (Rank i = 0; i < rank; ++i) {
-                if (indices[i] < 0 || indices[i] >= _dimensions[i]) {
-                    std::stringstream ss;
-                    subscript_type bounds = _dimensions;
-                    for (auto& x : bounds) { x--; }
-                    ss << "tensor error: _assert_index : index " << i << " is out of bounds\n"
-                        << "\tindices:     " << indices << "\n"
-                        << "\tupper bound: " << bounds << "\n"
-                        << "\n\n"
-                        << std::stacktrace::current() << std::endl;
-                    throw std::out_of_range(ss.str());
+            extents_type _extents;
+            coord_type _strides;
+
+        public:
+            static constexpr rank_type stride_rank_dynamic() noexcept { return _stride_rank_dynamic; }
+
+            static constexpr bool is_always_unique = true;
+            static constexpr bool is_always_contiguous = false;
+            static constexpr bool is_always_strided = true;
+            constexpr bool is_unique() const noexcept { return true; }
+            constexpr bool is_contiguous() const noexcept { return false; }
+            constexpr bool is_strided() const noexcept { return true; }
+
+            constexpr index_type stride(rank_type r) const { return _strides[r]; }
+            constexpr const extents_type& extents() const noexcept { return _extents; }
+
+            // not part of the standard mapping interface
+            constexpr const coord_type& strides() const { return _strides; }
+
+        private:
+
+            static constexpr coord_type _default_strides(const extents_type& exts) {
+                coord_type strides;
+                index_type stride = 1;
+                for (rank_type i = 0; i < _stride_rank_dynamic; ++i) {
+                    strides[i] = stride;
+                    stride *= exts.extent(i);
                 }
+                return strides;
             }
-        }
 
-    public:
-        index_type operator()(subscript_cref_type indices) const {
-            _assert_index(indices);
-            index_type idx = 0;
-            for (Rank i = 0; i < rank; ++i) {
-                idx += indices[i] * _strides[i];
-            }
-            return idx;
-        }
-
-        index_type flat_index(index_type idx) const {
-            subscript_type indices;
-            for (Rank i = rank - 1; i >= 0; --i) {
-                indices[i] = idx / _strides[i];
-                idx -= indices[i] * _strides[i];
-            }
-            return this->operator()(indices);
-        }
-
-        subscript_cref_type dimensions() const {
-            return _dimensions;
-        }
-
-        template <Rank r>
-        index_type dimension() const {
-            static_assert(0 <= r && r < rank_, "Dimension out of bounds");
-            return _dimensions[r];
-        }
-
-        subscript_cref_type strides() const {
-            return _strides;
-        }
-
-        template <Rank r>
-        index_type stride() const {
-            static_assert(0 <= r && r < rank_, "Dimension out of bounds");
-            return _strides[r];
-        }
-
-        index_type size() const {
-            index_type total_size = 1;
-            for (Rank i = 0; i < rank; ++i) {
-                total_size *= _dimensions[i];
-            }
-            return total_size;
-        }
-
-        index_type mem_size() const {
-            subscript_type last_index;
-            for (Rank i = 0; i < rank; ++i) {
-                last_index[i] = _dimensions[i] - 1;
-            }
-            return this->operator()(last_index) + 1;
-        }
-
-        void assert_container(index_type container_size, index_type offset) const {
-            if (offset + mem_size() > container_size) {
-                std::stringstream ss;
-                ss << "LeftStrided error: container size is too small for layout.\n"
-                    << "\t requested  = " << offset + mem_size() << " (with offset " << offset << ")"
-                    << " but container size is " << container_size
-                    << "\n\n"
-                    << std::stacktrace::current() << std::endl;
-                throw std::out_of_range(ss.str());
-            }
-        }
-
-        // constructors
-        LeftStrided() = default;
-
-        LeftStrided(subscript_cref_type dimensions, subscript_cref_type strides)
-            : _dimensions(dimensions), _strides(strides) {
-                for (Rank i = 0; i < rank; ++i) {
-                    if (dimensions[i] < 0) {
+            template <class... Indices>
+                requires(sizeof...(Indices) == _rank)
+            void _assert_index(Indices... indices) const {
+                coord_type idx_arr{static_cast<index_type>(indices)...};
+                for (rank_type i = 0; i < _rank; ++i) {
+                    if (idx_arr[i] < 0 || idx_arr[i] >= _extents.extent(i)) {
                         std::stringstream ss;
-                        ss << "LeftStrided error: dimensions[" << i << "] = " << dimensions[i] << " must be >= 0."
-                            << "\n\n"
-                            << std::stacktrace::current() << std::endl;
-                        throw std::out_of_range(ss.str());
-                    }
-                }
-                for (Rank i = 0; i < rank; ++i) {
-                    if (strides[i] <= 0) {
-                        std::stringstream ss;
-                        ss << "LeftStrided error: strides[" << i << "] = " << strides[i] << " must be > 0."
-                            << "\n\n"
-                            << std::stacktrace::current() << std::endl;
-                        throw std::out_of_range(ss.str());
-                    }
-                }
-                index_type min_stride = 1;
-                for (Rank i = 0; i < rank; ++i) {
-                    if (strides[i] < min_stride) {
-                        std::stringstream ss;
-                        ss << "LeftStrided error: strides[" << i << "] = " << strides[i] << " < " << min_stride
-                            << " at dimensions[" << i << "] = " << dimensions[i] << ". Stride must be at least 1 for the first dimensions."
-                            << "\n\n"
-                            << std::stacktrace::current() << std::endl;
-                        throw std::out_of_range(ss.str());
-                    }
-                    min_stride *= dimensions[i];
-                }
-            }
-
-        LeftStrided(subscript_cref_type dimensions)
-            : LeftStrided(dimensions, _default_strides(dimensions)) {}
-
-        // sub-layout constructor
-        LeftStrided(const LeftStrided& layout, subscript_cref_type dimensions, subscript_cref_type offset = {})
-            : _dimensions(dimensions), _strides(layout._strides) {
-                for (Rank i = 0; i < rank; ++i) {
-                    if (dimensions[i] < 0 || offset[i] < 0 || offset[i] + dimensions[i] > layout._dimensions[i]) {
-                        std::stringstream ss;
-                        ss << "tensor error: subtensor : index " << i << " is out of bounds\n"
-                            << "\tsub offset:        " << offset << "\n"
-                            << "\tsub dimensions:    " << dimensions << "\n"
-                            << "\ttensor dimensions: " << _dimensions << "\n"
+                        ss << "LeftStrided::mapping error: index " << i << " is out of bounds\n"
+                            << "\tindices:     " << temp::to_string(idx_arr) << "\n"
+                            << "\tupper bound: " << temp::to_string(_extents, -1) << "\n"
                             << "\n\n"
                             << std::stacktrace::current() << std::endl;
                         throw std::out_of_range(ss.str());
@@ -173,12 +74,124 @@ class LeftStrided : LayoutTag {
                 }
             }
 
-        LeftStrided sublayout(subscript_cref_type dimensions, subscript_cref_type offset = {}) const {
-            return LeftStrided(*this, dimensions, offset);
-        }
-};
+        public:
+            mapping() = default;
 
-} // namespace layout
+            template<typename OtherExtents>
+                requires detail::is_extents_v<OtherExtents>
+            constexpr mapping(const OtherExtents& exts, const coord_type& strides)
+                : _extents(exts), _strides(strides) {
+                    for (rank_type i = 0; i < _rank; ++i) {
+                        if (_extents.extent(i) < 0) {
+                            std::stringstream ss;
+                            ss << "LeftStrided::mapping error: extents[" << i << "] = " << _extents.extent(i) << " must be >= 0."
+                                << "\n\n"
+                                << std::stacktrace::current() << std::endl;
+                            throw std::out_of_range(ss.str());
+                        }
+                    }
+                    for (rank_type i = 0; i < _rank; ++i) {
+                        if (stride(i) <= 0) {
+                            std::stringstream ss;
+                            ss << "LeftStrided::mapping error: strides[" << i << "] = " << stride(i) << " must be > 0."
+                                << "\n\n"
+                                << std::stacktrace::current() << std::endl;
+                            throw std::out_of_range(ss.str());
+                        }
+                    }
+                    index_type min_stride = 1;
+                    for (rank_type i = 0; i < _rank; ++i) {
+                        if (stride(i) < min_stride) {
+                            std::stringstream ss;
+                            ss << "LeftStrided::mapping error: strides[" << i << "] = " << stride(i) << " < " << min_stride
+                                << " at extents[" << i << "] = " << _extents.extent(i) << ". Stride must be at least 1 for the first extents."
+                                << "\n\n"
+                                << std::stacktrace::current() << std::endl;
+                            throw std::out_of_range(ss.str());
+                        }
+                        min_stride *= _extents.extent(i);
+                    }
+                }
+
+            template<typename OtherExtents>
+                requires detail::is_extents_v<OtherExtents>
+            constexpr mapping(const OtherExtents& exts)
+                : mapping(exts, _default_strides(exts)) {}
+
+            constexpr mapping(const coord_type& exts, const coord_type& strides)
+                : mapping(extents_type(exts), strides) {}
+
+            constexpr mapping(const coord_type& exts)
+                : mapping(extents_type(exts)) {}
+
+            constexpr mapping(const mapping&) = default;
+            constexpr mapping(mapping&&) = default;
+
+        protected:
+            explicit constexpr mapping(const mapping& parent, const extents_type& exts, const coord_type& offsets = {})
+                : _extents(exts), _strides(parent._strides) {
+                    for (rank_type i = 0; i < _rank; ++i) {
+                        if (exts.extent(i) < 0 || offsets[i] < 0 || offsets[i] + exts.extent(i) > parent._extents.extent(i)) {
+                            std::stringstream ss;
+                            ss << "LeftStrided::mapping error: submap : index " << i << " is out of bounds\n"
+                                << "\trequested extent: " << exts.extent(i) << " at offset " << offsets[i] << "\n"
+                                << "\tparent upper bound: " << parent._extents.extent(i) - 1 << "\n"
+                                << "\n\n"
+                                << std::stacktrace::current() << std::endl;
+                            throw std::out_of_range(ss.str());
+                        }
+                    }
+                }
+
+        public:
+            template<typename OtherExtents>
+                requires detail::is_extents_v<OtherExtents>
+            mapping submap(const OtherExtents& exts, const coord_type& offsets = {}) const {
+                return mapping(*this, exts, offsets);
+            }
+
+            mapping submap(const coord_type& exts, const coord_type& offsets = {}) const {
+                return mapping(*this, exts, offsets);
+            }
+
+            mapping& operator=(const mapping&) = default;
+            mapping& operator=(mapping&&) = default;
+
+        public:
+            template <class... Indices>
+                requires(sizeof...(Indices) == _rank)
+            constexpr index_type operator()(Indices... indices) const {
+                _assert_index(indices...);
+                index_type idx = 0;
+                rank_type i = 0;
+                ((idx += indices * stride(i++)), ...);
+                return idx;
+            }
+
+            constexpr std::size_t required_span_size() const {
+                std::size_t size = 0;
+                for (rank_type i = 0; i < _rank; ++i) {
+                    size += (_extents.extent(i) - 1) * stride(i);
+                }
+                return size + 1;
+            }
+
+            // forward iterator that avoids integer multiplication in
+            // incrementer. Constructors still use multiplication.
+            iterator_type begin() const {
+                return LeftStridedIterator(this);
+            }
+
+            iterator_type end() const {
+                return LeftStridedIterator(this, true);
+            }
+
+    }; // class mapping
+
+}; // struct LeftStrided
+
 } // namespace nabla
+
+#include "left_strided_iterator.hpp"
 
 #endif // NABLA_LAYOUTS_LEFT_STRIDED_HPP

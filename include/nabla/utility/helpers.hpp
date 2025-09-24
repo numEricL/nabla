@@ -4,6 +4,7 @@
 #include <string_view>
 #include <tuple>
 
+namespace nabla {
 namespace utility {
 
 template <typename T>
@@ -41,5 +42,6 @@ void for_each_in_tuple(Tuple&& t, F&& f) {
 }
 
 } // namespace utility
+} // namespace nabla
 
 #endif // UTILITY_HELPERS_HPP

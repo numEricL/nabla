@@ -1,7 +1,11 @@
-#include <functional>
-#include <utility>
+#ifndef NABLA_ELEMENTWISE_EXPR_HPP
+#define NABLA_ELEMENTWISE_EXPR_HPP
+
+#include <functional> // for std::plus, etc.
+#include <utility> // for std::index_sequence
 #include <tuple>
-#include "nabla/traits.hpp"
+#include "nabla/concepts.hpp"
+#include "nabla/elementwise_expr_iterator.hpp"
 
 // TODO: enforce invariants e.g. rank, dimensions, fp type
 
@@ -11,19 +15,8 @@
 
 namespace nabla {
 
-template <typename T>
-    requires IsExprCompatible<T>
-class ExprStorage {
-    T _expr;
-    public:
-        ExprStorage(const T& expr) : _expr(expr) {}
-        ExprStorage(T&& expr) : _expr(std::move(expr)) {}
-        T::index_type size() const { return _expr.size(); }
-        const T& get() const { return _expr; }
-        T& get() { return _expr; }
-};
-
 template <typename Op, typename... Inputs>
+    requires (IsElementwiseExprCompatible<Inputs> && ...)
 class ExprElementWiseOp;
 
 // base case: collect_leaf_ptrs for a leaf nodes
@@ -33,112 +26,147 @@ auto collect_leaf_ptrs(T& leaf) {
     return std::tuple<T*>{&leaf};
 }
 
-// returns inputs of an expression in left-to-right depth-first order
-//template <typename Op, typename... Inputs>
-//auto collect_leaf_ptrs(ExprElementWiseOp<Op, Inputs...>& expr) {
-//    return std::tuple_cat(collect_leaf_ptrs(std::get<ExprStorage<Inputs>>(expr._inputs).get())...);
-//}
-
-template <typename Op, typename... Inputs, std::size_t... Is>
-auto collect_leaf_ptrs_impl(ExprElementWiseOp<Op, Inputs...>& expr, std::index_sequence<Is...>) {
-    return std::tuple_cat(collect_leaf_ptrs(std::get<Is>(expr._inputs).get())...);
-}
-
 template <typename Op, typename... Inputs>
 auto collect_leaf_ptrs(ExprElementWiseOp<Op, Inputs...>& expr) {
-    return collect_leaf_ptrs_impl(expr, std::index_sequence_for<Inputs...>{});
+    return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+        return std::tuple_cat(collect_leaf_ptrs(std::get<Is>(expr._inputs))...);
+    }(std::index_sequence_for<Inputs...>{});
 }
 
 // N-ary expression template
 template <typename Op, typename... Inputs>
+    requires (IsElementwiseExprCompatible<Inputs> && ...)
 class ExprElementWiseOp : public ElementwiseExprTag {
     Op _op;
-    std::tuple<ExprStorage<Inputs>...> _inputs;
+    std::tuple<Inputs...> _inputs;
     using input1_t = std::tuple_element_t<0, std::tuple<Inputs...>>;
 
     public:
-        using op_type = Op;
-        using inputs_type = std::tuple<ExprStorage<Inputs>...>;
-        static constexpr Rank rank = input1_t::rank;
-        using index_type = typename input1_t::index_type;
-        using subscript_type = typename input1_t::subscript_type;
-        using subscript_cref_type = typename input1_t::subscript_cref_type;
 
-        ExprElementWiseOp(Op op, const Inputs&... inputs)
+        //
+        // Member types
+        //
+        using op_type = Op;
+        using inputs_type = std::tuple<Inputs...>;
+        using extents_type = typename input1_t::extents_type;
+        using index_type = typename input1_t::index_type;
+        using coord_type = typename input1_t::coord_type;
+        using rank_type = typename input1_t::rank_type;
+        using value_type = typename input1_t::value_type;
+
+        //
+        // Member functions
+        //
+
+        //
+        // Observers
+        //
+        static constexpr input1_t::rank_type rank() noexcept { return input1_t::rank(); }
+
+        constexpr index_type extent(rank_type r) const noexcept { return std::get<0>(_inputs).extent(r); }
+        constexpr extents_type extents() const noexcept { return std::get<0>(_inputs).extents(); }
+        constexpr index_type size() const noexcept { return std::get<0>(_inputs).size(); }
+
+        //
+        // Constructors
+        //
+
+         ExprElementWiseOp(const Op& op, const Inputs&... inputs)
             : _op(op), _inputs(inputs...) {}
 
-        ExprElementWiseOp(Op op, Inputs&&... inputs)
+         ExprElementWiseOp(Op&& op, Inputs&&... inputs)
             : _op(std::move(op)), _inputs(std::move(inputs)...) {}
 
-        index_type size() const {
-            return std::get<0>(_inputs).get().size();
-        }
-
-        subscript_type dimensions() const {
-            return std::get<0>(_inputs).get().dimensions();
-        }
-
+        // TODO: remove in favor of iterator-based access
         auto operator[](size_t i) const {
             return std::apply(
                 [&](auto const&... ins) {
-                    return _op(ins.get()[i]...);
+                    return _op(ins[i]...);
                 }, _inputs);
         }
 
-        template <typename... Args> requires (sizeof...(Args) == rank) &&
+        template <typename... Args> requires (sizeof...(Args) == rank()) &&
             (std::conjunction_v<std::is_convertible<Args, index_type>...>)
         auto operator()(Args... args) const {
             return std::apply(
                 [&](auto const&... ins) {
-                    return _op(ins.get()(args...)...);
+                    return _op(ins(args...)...);
                 }, _inputs);
         }
 
-        template <typename Op_, typename... Inputs_, std::size_t... Is>
-        friend auto collect_leaf_ptrs_impl(ExprElementWiseOp<Op_, Inputs_...>& expr, std::index_sequence<Is...>);
+        template <typename Op_, typename... Inputs_>
+        friend auto collect_leaf_ptrs(ExprElementWiseOp<Op_, Inputs_...>& expr);
 
         auto inputs() {
             return collect_leaf_ptrs(*this);
+        }
+
+        auto begin() const {
+            return std::apply(
+                [&](const auto&... inputs) {
+                    return ExprIterator<op_type, decltype(inputs.begin())...>{
+                        _op, inputs.begin()...
+                    };
+                },
+                _inputs
+            );
+        }
+
+        auto end() const {
+            // only first iterator is instantiated to end(), the rest are default-constructed
+            // operator== and operator!= only compare the first iterator
+            return std::apply(
+                [&](const auto& first_input, const auto&... rest_inputs) {
+                    return ExprIterator<op_type, decltype(first_input.end()), decltype(rest_inputs.begin())...>{
+                        _op,
+                            first_input.end(),
+                            decltype(rest_inputs.begin()){}... // default-constructed
+                    };
+                },
+                _inputs
+            );
         }
 };
 
 //helper to decay input types (e.g. const T& -> T)
 template <typename Op, typename... Inputs>
-auto make_elementwise_op(Op&& op, Inputs&&... inputs) {
-    return ExprElementWiseOp< std::decay_t<Op>, std::decay_t<Inputs>... >(
+auto make_expr_element_wise_op(Op&& op, Inputs&&... inputs) {
+    return ExprElementWiseOp< std::decay_t<Op>, std::decay_t<Inputs>... >{
         std::forward<Op>(op), std::forward<Inputs>(inputs)...
-        );
+    };
 }
 
 // Operator overloads: Arithmetic operations (+ - * / % -)
 template <typename In1, typename In2>
 auto operator+(In1&& input1, In2&& input2) {
-    return make_elementwise_op( std::plus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
+    return make_expr_element_wise_op( std::plus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
 template <typename In1, typename In2>
 auto operator-(In1&& input1, In2&& input2) {
-    return make_elementwise_op( std::minus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
+    return make_expr_element_wise_op( std::minus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
 template <typename In1, typename In2>
 auto operator*(In1&& input1, In2&& input2) {
-    return make_elementwise_op( std::multiplies<>(), std::forward<In1>(input1), std::forward<In2>(input2));
+    return make_expr_element_wise_op( std::multiplies<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
 template <typename In1, typename In2>
 auto operator/(In1&& input1, In2&& input2) {
-    return make_elementwise_op( std::divides<>(), std::forward<In1>(input1), std::forward<In2>(input2));
+    return make_expr_element_wise_op( std::divides<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
 template <typename In1, typename In2>
 auto operator%(In1&& input1, In2&& input2) {
-    return make_elementwise_op( std::modulus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
+    return make_expr_element_wise_op( std::modulus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
 template <typename In1>
 auto operator-(In1&& input1) {
-    return make_elementwise_op( std::negate<>(), std::forward<In1>(input1));
+    return make_expr_element_wise_op( std::negate<>(), std::forward<In1>(input1));
 }
 
 } // namespace nabla
+
+#endif // NABLA_ELEMENTWISE_EXPR_HPP

@@ -4,6 +4,7 @@
 #include <complex>
 #include <type_traits>
 
+namespace nabla {
 namespace utility {
 
 template <typename fp>
@@ -66,5 +67,6 @@ fp conj(fp x) {
 }
 
 } // namespace utility
+} // namespace nabla
 
 #endif // UTILITY_COMPLEX_HPP

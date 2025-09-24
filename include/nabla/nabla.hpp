@@ -3,10 +3,12 @@
 
 #define NABLA_DEBUG
 
+#include "nabla/types.hpp"
+#include "nabla/concepts.hpp"
 #include "nabla/layouts.hpp"
-#include "nabla/tensor/tensor.hpp"
+#include "nabla/tensor.hpp"
 #include "nabla/elementwise_expr.hpp"
-#include "nabla/ostream.hpp"
-#include "nabla/debug/assert.hpp"
+//#include "nabla/ostream.hpp"
+//#include "nabla/debug/assert.hpp"
 
 #endif // NABLA_NABLA_HPP
