@@ -46,7 +46,7 @@ int test_access(TensorT& mat) {
             } else {
                 if (mat(i,j) != 0) {
                     std::cerr << "Error in assignment test at (" << i << "," << j << "): expected "
-                              << (i + j*mat.extent(0)) << ", got " << mat(i,j) << "\n";
+                              << 0 << ", got " << mat(i,j) << "\n";
                     return 1;
                 }
             }
