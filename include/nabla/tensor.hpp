@@ -410,10 +410,12 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
 
         Tensor& operator=(Tensor&& other) {
             this->_mdspan = std::move(other._mdspan);
+            return *this;
         }
 
         Tensor& operator=(base_type&& other) {
             this->_mdspan = std::move(other._mdspan);
+            return *this;
         }
 
     //
