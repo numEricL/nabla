@@ -57,10 +57,10 @@ struct LeftStrided {
                 return strides;
             }
 
-            template <class... Indices>
-                requires(sizeof...(Indices) == _rank)
-            void _assert_index(Indices... indices) const {
-                coord_type idx_arr{static_cast<index_type>(indices)...};
+            template <typename... IndexTypes>
+                requires(sizeof...(IndexTypes) == _rank && (std::is_convertible_v<IndexTypes, index_type> && ...))
+            void _assert_index(IndexTypes... idxs) const {
+                coord_type idx_arr{static_cast<index_type>(idxs)...};
                 for (rank_type i = 0; i < _rank; ++i) {
                     if (idx_arr[i] < 0 || idx_arr[i] >= _extents.extent(i)) {
                         std::stringstream ss;
@@ -158,13 +158,13 @@ struct LeftStrided {
             mapping& operator=(mapping&&) = default;
 
         public:
-            template <class... Indices>
-                requires(sizeof...(Indices) == _rank)
-            constexpr index_type operator()(Indices... indices) const {
-                _assert_index(indices...);
+            template <typename... IndexTypes>
+                requires(sizeof...(IndexTypes) == _rank && (std::is_convertible_v<IndexTypes, index_type> && ...))
+            constexpr index_type operator()(IndexTypes... idxs) const {
+                _assert_index(idxs...);
                 index_type idx = 0;
                 rank_type i = 0;
-                ((idx += indices * stride(i++)), ...);
+                ((idx += idxs * stride(i++)), ...);
                 return idx;
             }
 

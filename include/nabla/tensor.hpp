@@ -4,67 +4,10 @@
 #include "mdspan/mdspan.hpp"
 #include "nabla/types.hpp"
 #include "nabla/tensor_iterator.hpp"
+#include "nabla/utility/nested_initializer_list.hpp"
+#include "nabla/default_accessor.hpp"
 
 namespace nabla {
-
-template <typename T>
-class default_accessor<const T> {
-    public:
-        //using offset_policy = default_accessor;
-        using element_type = const T;
-        using reference = const T&;
-        using data_handle_type = const T*;
-        using read_accessor_type = default_accessor<const T>;
-        using write_accessor_type = default_accessor<T>;
-
-        constexpr default_accessor() noexcept = default;
-
-        template <typename OtherElementType>
-            requires std::is_convertible_v<OtherElementType(*)[], element_type(*)[]>
-        constexpr default_accessor(default_accessor<OtherElementType>) noexcept {}
-
-        constexpr reference access(data_handle_type p, size_t i) const noexcept {
-            return p[i];
-        }
-
-        constexpr data_handle_type offset(data_handle_type p, size_t i) const noexcept {
-            return p + i;
-        }
-
-    private:
-        template <typename U, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
-        friend class Tensor;
-
-        using write_handle_type = T*;
-        static write_handle_type write_cast(data_handle_type p) noexcept {
-            return const_cast<write_handle_type>(p);
-        }
-};
-
-template <typename T>
-class default_accessor : default_accessor<const T> {
-    public:
-        //using offset_policy = default_accessor;
-        using element_type = T;
-        using reference = T&;
-        using data_handle_type = T*;
-        using read_accessor_type = default_accessor<const T>;
-        using write_accessor_type = default_accessor<T>;
-
-        constexpr default_accessor() noexcept = default;
-
-        template <typename OtherElementType>
-            requires std::is_convertible_v<OtherElementType(*)[], element_type(*)[]>
-            constexpr default_accessor(default_accessor<OtherElementType>) noexcept {}
-
-        constexpr reference access(data_handle_type p, size_t i) const noexcept {
-            return p[i];
-        }
-
-        constexpr data_handle_type offset(data_handle_type p, size_t i) const noexcept {
-            return p + i;
-        }
-};
 
 template <
     typename T,
@@ -148,6 +91,7 @@ class Tensor<const T, Extents, LayoutPolicy, AccessorPolicy> {
         constexpr Tensor() = default;
 
         template <typename... IndexTypes>
+            requires((std::is_convertible_v<IndexTypes, index_type> && ...))
         explicit constexpr Tensor(data_handle_type p, IndexTypes... extents)
             : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(extents...))) {}
 
@@ -213,12 +157,13 @@ class Tensor<const T, Extents, LayoutPolicy, AccessorPolicy> {
     // Element access
     //
     public:
-        template <typename... Args>
-        constexpr reference operator()(Args&&... args) const {
+        template <typename... IndexTypes>
+            requires((std::is_convertible_v<IndexTypes, index_type> && ...))
+        constexpr reference operator()(IndexTypes... idxs) const {
 #if MDSPAN_USE_BRACKET_OPERATOR
-            return _mdspan[std::forward<Args>(args)...];
+            return _mdspan[idxs...];
 #else
-            return _mdspan(std::forward<Args>(args)...);
+            return _mdspan(idxs...);
 #endif
 
         }
@@ -310,7 +255,7 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
         constexpr Tensor() = default;
 
         template <typename... IndexTypes>
-            requires( (std::is_convertible_v<IndexTypes, index_type> && ...) )
+            requires((std::is_convertible_v<IndexTypes, index_type> && ...))
         explicit constexpr Tensor(data_handle_type p, IndexTypes... extents)
             : base_type(p, extents...) {}
 
@@ -422,12 +367,13 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
     // Element access
     //
     public:
-        template <typename... Args>
-        constexpr reference operator()(Args&&... args) const {
+        template <typename... IndexTypes>
+            requires((std::is_convertible_v<IndexTypes, index_type> && ...))
+        constexpr reference operator()(IndexTypes... idxs) const {
 #if MDSPAN_USE_BRACKET_OPERATOR
-            return this->_mdspan[std::forward<Args>(args)...];
+            return this->_mdspan[idxs...];
 #else
-            return this->_mdspan(std::forward<Args>(args)...);
+            return this->_mdspan(idxs...);
 #endif
         }
 

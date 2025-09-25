@@ -2,7 +2,6 @@
 #define NABLA_TYPES_HPP
 
 #include "mdspan/mdspan.hpp" // for extents and MDSPAN_IMPL_STANDARD_NAMESPACE
-//#include "nabla/layouts/left_strided.hpp" // for LeftStrided
 
 namespace mdspan_ns = Kokkos;
 
