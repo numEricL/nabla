@@ -8,7 +8,7 @@ namespace nabla {
 namespace utility {
 
 template <typename T>
-constexpr std::string_view type_name_func()
+constexpr std::string_view type_name()
 {
     using namespace std;
 #ifdef __clang__
@@ -26,9 +26,6 @@ constexpr std::string_view type_name_func()
     return std::string_view(p.data() + 89, p.size() - 89 - 7);
 #endif
 }
-
-template <typename T>
-constexpr std::string_view type_name = type_name_func<T>();
 
 template <typename Tuple, typename F, std::size_t... I>
 void for_each_impl(Tuple&& t, F&& f, std::index_sequence<I...>) {

@@ -4,8 +4,8 @@
 #include "mdspan/mdspan.hpp"
 #include "nabla/types.hpp"
 #include "nabla/tensor_span_iterator.hpp"
-#include "nabla/utility/nested_initializer_list.hpp"
 #include "nabla/default_accessor.hpp"
+#include "nabla/utility/nested_initializer_list.hpp"
 
 namespace nabla {
 
@@ -115,6 +115,9 @@ class TensorSpan<const T, Extents, LayoutPolicy, AccessorPolicy> {
 
         constexpr TensorSpan(data_handle_type p, const mapping_type& mapping)
             : _mdspan(accessor_type::write_cast(p), mapping) {}
+
+        constexpr TensorSpan(data_handle_type p, const mapping_type& mapping, const accessor_type& accessor)
+            : _mdspan(accessor_type::write_cast(p), mapping, accessor.to_write()) {}
 
     // Subtensor constructors
     protected:
@@ -256,6 +259,8 @@ class TensorSpan : public TensorSpan<const T, Extents, LayoutPolicy, typename Ac
     //
     public:
         constexpr TensorSpan() = default;
+        constexpr TensorSpan(const TensorSpan&) = default;
+        constexpr TensorSpan(TensorSpan&&) = default;
 
         template <typename... IndexTypes>
             requires((std::is_convertible_v<IndexTypes, index_type> && ...))
@@ -281,8 +286,9 @@ class TensorSpan : public TensorSpan<const T, Extents, LayoutPolicy, typename Ac
         constexpr TensorSpan(data_handle_type p, const mapping_type& mapping)
             : base_type(p, mapping) {}
 
-        constexpr TensorSpan(const TensorSpan&) = default;
-        constexpr TensorSpan(TensorSpan&&) = default;
+        constexpr TensorSpan(data_handle_type p, const mapping_type& mapping, const accessor_type& accessor)
+            : base_type(p, mapping, accessor) {}
+
 
     // Subtensor constructors
     protected:

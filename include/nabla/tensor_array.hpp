@@ -5,6 +5,7 @@
 #include "nabla/types.hpp"
 #include "nabla/tensor_span.hpp"
 #include "nabla/tensor_array_iterator.hpp"
+#include "nabla/default_accessor.hpp"
 #include "nabla/utility/nested_initializer_list.hpp"
 
 namespace nabla {
@@ -45,8 +46,6 @@ class TensorArray {
         using const_pointer   = typename container_type::const_pointer;
         using const_reference = typename container_type::const_reference;
 
-        using tensor_span_type = nabla::TensorSpan<element_type, extents_type, layout_type>;
-        using const_tensor_span_type = nabla::TensorSpan<std::add_const_t<element_type>, extents_type, layout_type>;
         using coord_type    = std::array<index_type, mdarray_type::rank()>;
         using iterator = TensorArrayIterator<TensorArray>;
         using const_iterator = ConstTensorArrayIterator<TensorArray>;
@@ -242,19 +241,30 @@ class TensorArray {
     // Conversion to TensorSpan
     //
     public:
-        constexpr operator const_tensor_span_type() const {
-            return const_tensor_span_type(data(), mapping());
+
+
+        // operator to const TensorSpan
+        template <typename AccessorType = default_accessor<std::add_const_t<element_type>>>
+        constexpr operator TensorSpan<std::add_const_t<element_type>, extents_type, layout_type, AccessorType>() const {
+            return TensorSpan<std::add_const_t<element_type>, extents_type, layout_type, AccessorType>(data(), mapping());
         }
 
-        constexpr const_tensor_span_type to_span() const {
-            return const_tensor_span_type(data(), mapping());
-        }
-        constexpr operator tensor_span_type() {
-            return tensor_span_type(data(), mapping());
+        // to const TensorSpan
+        template <typename AccessorType = default_accessor<std::add_const_t<element_type>>>
+        constexpr TensorSpan<std::add_const_t<element_type>, extents_type, layout_type, AccessorType> to_span(const AccessorType& accessor = AccessorType()) const {
+            return TensorSpan<std::add_const_t<element_type>, extents_type, layout_type, AccessorType>(data(), mapping(), accessor);
         }
 
-       constexpr tensor_span_type to_span() {
-            return tensor_span_type(data(), mapping());
+        // operator to TensorSpan
+        template <typename AccessorType = default_accessor<element_type>>
+        constexpr operator TensorSpan<element_type, extents_type, layout_type, AccessorType>() {
+            return TensorSpan<element_type, extents_type, layout_type, AccessorType>(data(), mapping());
+        }
+
+        // to TensorSpan
+        template <typename AccessorType = default_accessor<element_type>>
+        constexpr TensorSpan<element_type, extents_type, layout_type, AccessorType> to_span(const AccessorType& accessor = AccessorType()) {
+            return TensorSpan<element_type, extents_type, layout_type, AccessorType>(data(), mapping(), accessor);
         }
 
     //
