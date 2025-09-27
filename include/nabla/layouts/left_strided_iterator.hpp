@@ -3,8 +3,8 @@
 
 namespace nabla {
 
-// forward iterator that avoids integer multiplication in
-// incrementer. Constructors still use multiplication.
+// forward iterator that avoids integer multiplication in incrementer.
+// Constructors still use multiplication.
 template <typename Extents>
 class LeftStrided::LeftStridedIterator {
     using mapping_type = LeftStrided::mapping<Extents>;
@@ -36,10 +36,6 @@ public:
     LeftStridedIterator(const mapping_type* mapping, bool)
         : _mapping(mapping), _flat_index(mapping->required_span_size()) {}
 
-    // middle iterator constructor
-    LeftStridedIterator(const mapping_type* mapping, coord_type indices)
-        : _mapping(mapping), _indices(indices), _flat_index(mapping->operator()(indices)) {}
-
     reference operator*() const {
         return _flat_index;
     }
@@ -67,15 +63,15 @@ private:
     void increment() {
         index_type prev_index = _flat_index;
         for (rank_type r = 0; r < mapping_type::extents_type::rank(); ++r) {
-            ++_indices[r];
             _flat_index += _mapping->stride(r);
-            _deltas[r] += _mapping->stride(r);
-            if (_indices[r] < _mapping->extents().extent(r)) {
+            if (++_indices[r] < _mapping->extents().extent(r)) {
                 return;
             }
             // Wrap around this dimension
+            if (_deltas[r] == 0) {
+                _deltas[r] = _flat_index;
+            }
             _flat_index -= _deltas[r];
-            _deltas[r] = 0;
             _indices[r] = 0;
         }
         _flat_index = prev_index + 1; // one past the end

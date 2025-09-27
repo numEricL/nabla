@@ -6,25 +6,62 @@
 
 namespace nabla {
 
+//template <typename T, T::rank_type N>
+//concept IsRankN = (T::rank() == N);
 //
-// Tensor Concepts
+//template <typename T1, typename T2>
+//concept IsSameRankTensor =
+//IsTensorSpan<T1> && IsTensorSpan<T2> && (T1::rank() == T2::rank());
+
+//
+// TensorSpan Concepts
 //
 namespace detail {
-    template <class T> struct impl_is_tensor : std::false_type {};
+    template <class T> struct impl_is_tensor_span : std::false_type {};
 
     template <typename T, typename Extents, typename LayoutT, typename AccessorT>
-    struct impl_is_tensor<Tensor<T, Extents, LayoutT, AccessorT>> : std::true_type {};
+    struct impl_is_tensor_span<TensorSpan<T, Extents, LayoutT, AccessorT>> : std::true_type {};
 } // namespace detail
 
 template <typename T>
-concept IsTensor = detail::impl_is_tensor<std::remove_cvref_t<T>>::value;
+concept IsTensorSpan = detail::impl_is_tensor_span<std::remove_cvref_t<T>>::value;
 
-template <typename T, T::rank_type rank>
-concept IsTensorRankN = IsTensor<T> && (T::rank() == rank);
+//
+// TensorSpanIterator Concepts
 
-template <typename T1, typename T2>
-concept IsSameRankTensor =
-IsTensor<T1> && IsTensor<T2> && (T1::rank() == T2::rank());
+template <typename TensorSpanT>
+    requires (IsTensorSpan<TensorSpanT>)
+class TensorSpanIterator;
+
+namespace detail {
+    template <class T> struct impl_is_tensor_span_iterator : std::false_type {};
+
+    template <typename TensorT>
+        struct impl_is_tensor_span_iterator<TensorSpanIterator<TensorT>> : std::true_type {};
+    } // namespace detail
+
+template <typename T>
+concept IsTensorSpanIterator = detail::impl_is_tensor_span_iterator<std::remove_cvref_t<T>>::value;
+
+//
+// TensorArray Concepts
+//
+namespace detail {
+    template <class T> struct impl_is_tensor_array : std::false_type {};
+
+    template <typename T, typename Extents, typename LayoutT, typename ContainerT>
+    struct impl_is_tensor_array<TensorArray<T, Extents, LayoutT, ContainerT>> : std::true_type {};
+} // namespace detail
+
+template <typename T>
+concept IsTensorArray = detail::impl_is_tensor_array<std::remove_cvref_t<T>>::value;
+
+//
+// Tensor Concepts
+//
+
+template <typename T>
+concept IsTensor = IsTensorSpan<T> || IsTensorArray<T>;
 
 //
 // Expression Concepts
@@ -33,8 +70,7 @@ template <typename T>
 concept IsElementwiseExpr = std::is_base_of_v<ElementwiseExprTag, T>;
 
 template <typename T>
-concept IsElementwiseExprCompatible = IsTensor<T> ||
-    std::is_base_of_v<ElementwiseExprTag, T>;
+concept IsElementwiseExprCompatible = IsTensorSpan<T> || IsElementwiseExpr<T>;
 
 template <typename T, T::rank_type rank>
 concept IsRankN = T::rank() == rank;
@@ -42,28 +78,13 @@ concept IsRankN = T::rank() == rank;
 //
 // Expression Iterator Concepts
 //
-template <typename TensorType>
-    requires (IsTensor<TensorType>)
-class TensorIterator;
-
-namespace detail {
-template <class T> struct impl_is_tensor_iterator : std::false_type {};
-
-template <typename TensorType>
-    struct impl_is_tensor_iterator<TensorIterator<TensorType>> : std::true_type {};
-} // namespace detail
-
-template <typename T>
-concept IsTensorIterator = detail::impl_is_tensor_iterator<std::remove_cvref_t<T>>::value;
-
 struct ExprIteratorTag {};
 
 template <typename T>
 concept IsExprIterator = std::is_base_of_v<ExprIteratorTag, T>;
 
 template <typename T>
-concept IsExprIteratorCompatible = IsTensorIterator<T> ||
-std::is_base_of_v<ExprIteratorTag, T>;
+concept IsExprIteratorCompatible = IsTensorSpanIterator<T> || IsExprIterator<T>;
 
 } // namespace nabla
 

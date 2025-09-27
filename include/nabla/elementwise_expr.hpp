@@ -21,7 +21,7 @@ class ExprElementWiseOp;
 
 // base case: collect_leaf_ptrs for a leaf nodes
 template <typename T>
-    requires IsTensor<T>
+    requires IsTensorSpan<T>
 auto collect_leaf_ptrs(T& leaf) {
     return std::tuple<T*>{&leaf};
 }
@@ -46,7 +46,7 @@ class ExprElementWiseOp : public ElementwiseExprTag {
         //
         // Member types
         //
-        using op_type = Op;
+        using operation_type = Op;
         using inputs_type = std::tuple<Inputs...>;
         using extents_type = typename input1_t::extents_type;
         using index_type = typename input1_t::index_type;
@@ -104,7 +104,7 @@ class ExprElementWiseOp : public ElementwiseExprTag {
         auto begin() const {
             return std::apply(
                 [&](const auto&... inputs) {
-                    return ExprIterator<op_type, decltype(inputs.begin())...>{
+                    return ExprIterator<operation_type, decltype(inputs.begin())...>{
                         _op, inputs.begin()...
                     };
                 },
@@ -117,7 +117,7 @@ class ExprElementWiseOp : public ElementwiseExprTag {
             // operator== and operator!= only compare the first iterator
             return std::apply(
                 [&](const auto& first_input, const auto&... rest_inputs) {
-                    return ExprIterator<op_type, decltype(first_input.end()), decltype(rest_inputs.begin())...>{
+                    return ExprIterator<operation_type, decltype(first_input.end()), decltype(rest_inputs.begin())...>{
                         _op,
                             first_input.end(),
                             decltype(rest_inputs.begin()){}... // default-constructed
@@ -138,28 +138,81 @@ auto make_expr_element_wise_op(Op&& op, Inputs&&... inputs) {
 
 // Operator overloads: Arithmetic operations (+ - * / % -)
 template <typename In1, typename In2>
+    requires (IsElementwiseExprCompatible<In1> && IsElementwiseExprCompatible<In2>)
 auto operator+(In1&& input1, In2&& input2) {
     return make_expr_element_wise_op( std::plus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
+template <typename In>
+    requires IsElementwiseExprCompatible<In>
+auto operator+(In&& input, typename std::remove_cvref_t<In>::value_type scalar) {
+    return make_expr_element_wise_op( [scalar](auto x) { return x + scalar; }, std::forward<In>(input));
+}
+
+template <typename In>
+    requires IsElementwiseExprCompatible<In>
+auto operator+(typename std::remove_cvref_t<In>::value_type scalar, In&& input) {
+    return make_expr_element_wise_op( [scalar](auto x) { return scalar + x; }, std::forward<In>(input));
+}
+
 template <typename In1, typename In2>
+    requires (IsElementwiseExprCompatible<In1> && IsElementwiseExprCompatible<In2>)
 auto operator-(In1&& input1, In2&& input2) {
     return make_expr_element_wise_op( std::minus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
+template <typename In>
+    requires IsElementwiseExprCompatible<In>
+auto operator-(In&& input, typename std::remove_cvref_t<In>::value_type scalar) {
+    return make_expr_element_wise_op( [scalar](auto x) { return x - scalar; }, std::forward<In>(input));
+}
+
+template <typename In>
+    requires IsElementwiseExprCompatible<In>
+auto operator-(typename std::remove_cvref_t<In>::value_type scalar, In&& input) {
+    return make_expr_element_wise_op( [scalar](auto x) { return scalar - x; }, std::forward<In>(input));
+}
+
 template <typename In1, typename In2>
+    requires (IsElementwiseExprCompatible<In1> && IsElementwiseExprCompatible<In2>)
 auto operator*(In1&& input1, In2&& input2) {
     return make_expr_element_wise_op( std::multiplies<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
+template <typename In>
+    requires IsElementwiseExprCompatible<In>
+auto operator*(In&& input, typename std::remove_cvref_t<In>::value_type scalar) {
+    return make_expr_element_wise_op( [scalar](auto x) { return x * scalar; }, std::forward<In>(input));
+}
+
+template <typename In>
+    requires IsElementwiseExprCompatible<In>
+auto operator*(typename std::remove_cvref_t<In>::value_type scalar, In&& input) {
+    return make_expr_element_wise_op( [scalar](auto x) { return scalar * x; }, std::forward<In>(input));
+}
+
 template <typename In1, typename In2>
+    requires (IsElementwiseExprCompatible<In1> && IsElementwiseExprCompatible<In2>)
 auto operator/(In1&& input1, In2&& input2) {
     return make_expr_element_wise_op( std::divides<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
+template <typename In>
+    requires IsElementwiseExprCompatible<In>
+auto operator/(In&& input, typename std::remove_cvref_t<In>::value_type scalar) {
+    return make_expr_element_wise_op( [scalar](auto x) { return x / scalar; }, std::forward<In>(input));
+}
+
 template <typename In1, typename In2>
+    requires (IsElementwiseExprCompatible<In1> && IsElementwiseExprCompatible<In2>)
 auto operator%(In1&& input1, In2&& input2) {
     return make_expr_element_wise_op( std::modulus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
+}
+
+template <typename In>
+    requires IsElementwiseExprCompatible<In>
+auto operator%(In&& input, typename std::remove_cvref_t<In>::value_type scalar) {
+    return make_expr_element_wise_op( [scalar](auto x) { return x % scalar; }, std::forward<In>(input));
 }
 
 template <typename In1>

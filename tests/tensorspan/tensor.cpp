@@ -15,7 +15,7 @@ int test_access(TensorT& mat) {
     coord_type dims {mat.extent(0), mat.extent(1)};
     coord_type sub_dims = {dims[0]/2, dims[1]/2};
     coord_type offsets = {1, 1};
-    TensorT submat = mat.subtensor(sub_dims, offsets);
+    TensorT submat = mat.subspan(sub_dims, offsets);
 
     for (auto iter = mat.begin(); iter != mat.end(); ++iter) {
         *iter = 0;
@@ -81,7 +81,7 @@ int test_assignment(TensorT& mat1, TensorT& mat2) {
 
 int main() {
     using Layout = nabla::LeftStrided;
-    using TensorType = nabla::Tensor<int, nabla::dims<2>, Layout>;
+    using TensorType = nabla::TensorSpan<int, nabla::dims<2>, Layout>;
 
     Layout::mapping<nabla::dims<2>> map1({4,4}, {1,10});
     Layout::mapping<nabla::dims<2>> map2({4,4});

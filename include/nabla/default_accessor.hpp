@@ -29,7 +29,7 @@ class default_accessor<const T> {
 
     private:
         template <typename U, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
-        friend class Tensor;
+        friend class TensorSpan;
 
         using write_handle_type = T*;
         static write_handle_type write_cast(data_handle_type p) noexcept {

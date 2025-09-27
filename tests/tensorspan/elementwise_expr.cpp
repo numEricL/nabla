@@ -14,7 +14,8 @@ int check(bool condition) {
 int main() {
     using fp = float;
     using Map = nabla::LeftStrided::mapping<nabla::dims<2>>;
-    using Tensor = nabla::Tensor<fp, nabla::dims<2>, nabla::LeftStrided>;
+    using TensorSpan = nabla::TensorSpan<fp, nabla::dims<2>, nabla::LeftStrided>;
+    using tt = typename TensorSpan::value_type;
 
     Map map({2,3}, {2, 10});
 
@@ -25,11 +26,11 @@ int main() {
     std::vector<fp> _d(map.required_span_size());
     std::vector<fp> _e(map.required_span_size());
 
-    Tensor a(_a.data(), {2, 3});
-    Tensor b(_b.data(), map);
-    Tensor c(_c.data(), {2, 3});
-    Tensor d(_d.data(), {2, 3});
-    Tensor e(_e.data(), {2, 3});
+    TensorSpan a(_a.data(), {2, 3});
+    TensorSpan b(_b.data(), map);
+    TensorSpan c(_c.data(), {2, 3});
+    TensorSpan d(_d.data(), {2, 3});
+    TensorSpan e(_e.data(), {2, 3});
 
     // Fill tensors
     for (size_t i = 0; i < 2; ++i) {
@@ -40,14 +41,17 @@ int main() {
     }
 
 
-    std::cout << "Tensor a:\n" << a << "\n";
-    std::cout << "Tensor b:\n" << b << "\n";
+    std::cout << "TensorSpan a:\n" << a << "\n";
+    std::cout << "TensorSpan b:\n" << b << "\n";
+
+    std::cout << "a*2:\n" << a*2 << "\n";
     // Elementwise addition
     c = a + b;
     auto expr = a + b + c;
     auto inputs = expr.inputs();
 
-    std::cout << expr << std::endl;
+    //std::cout << expr << std::endl;
+    //std::cout << "2*expr:\n" << fp(2) * expr << "\n";
 
     auto iter = expr.begin();
     for (size_t i = 0; i < 6; ++i) {

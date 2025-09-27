@@ -71,22 +71,13 @@ std::ostream& operator<<(std::ostream& os, const typename LeftStrided::mapping<E
 }
 
 template <typename TensorT>
-    requires (IsElementwiseExprCompatible<TensorT> && TensorT::rank() == 2)
+    requires (IsTensorArray<TensorT> || IsTensorSpan<TensorT> || IsElementwiseExpr<TensorT>) && (TensorT::extents_type::rank() == 2)
 std::ostream& operator<<(std::ostream& os, const TensorT& mat) {
     using T = typename TensorT::value_type;
 
     detail::print2d<T>(os, mat);
     return os;
 }
-
-//template <typename T, typename ExtentsT, typename LayoutT>
-//    requires (ExtentsT::rank() == 2)
-//std::ostream& operator<<(std::ostream& os, const Tensor<const T, ExtentsT, LayoutT>& t) {
-//    auto fmt = detail::get_format<T>();
-//
-//    detail::print2d<T>(os, t);
-//    return os;
-//}
 
 } // namespace nabla
 

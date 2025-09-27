@@ -69,8 +69,8 @@ void shared_ptr_example() {
     using mdspan_t = Kokkos::mdspan<int, extents_t, layout_t, shared_ptr_accessor<int>>;
     using cmdspan_t = Kokkos::mdspan<const int, extents_t, layout_t, shared_ptr_accessor<const int>>;
 
-    using Tensor_t = nabla::Tensor<int, extents_t, layout_t, shared_ptr_accessor<int>>;
-    using cTensor_t = nabla::Tensor<const int, extents_t, layout_t, shared_ptr_accessor<const int>>;
+    using Tensor_t = nabla::TensorSpan<int, extents_t, layout_t, shared_ptr_accessor<int>>;
+    using cTensor_t = nabla::TensorSpan<const int, extents_t, layout_t, shared_ptr_accessor<const int>>;
 
     extents_t exts;
 

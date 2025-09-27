@@ -3,7 +3,7 @@
 
 #include "mdspan/mdspan.hpp"
 #include "nabla/types.hpp"
-#include "nabla/tensor_iterator.hpp"
+#include "nabla/tensor_span_iterator.hpp"
 #include "nabla/utility/nested_initializer_list.hpp"
 #include "nabla/default_accessor.hpp"
 
@@ -15,10 +15,10 @@ template <
     typename LayoutPolicy,
     typename AccessorPolicy
 >
-class Tensor<const T, Extents, LayoutPolicy, AccessorPolicy> {
-    // Tensor class must enforce const-correctness through the inherited
-    // const pattern. Non-const Tensor<T> inherits from Tensor<const T>.
-    // Tensor<const T> owns data and provides a read-only interface, Tensor<T>
+class TensorSpan<const T, Extents, LayoutPolicy, AccessorPolicy> {
+    // TensorSpan class must enforce const-correctness through the inherited
+    // const pattern. Non-const TensorSpan<T> inherits from TensorSpan<const T>.
+    // TensorSpan<const T> owns data and provides a read-only interface, TensorSpan<T>
     // only provides a read-write interface. The "is-a" relationship allows
     // slicing off write access leaving behind a read-only interface. This
     // allows for implicit polymorphism that wouldn't ordinarily be possible,
@@ -43,19 +43,19 @@ class Tensor<const T, Extents, LayoutPolicy, AccessorPolicy> {
         using value_type   = std::remove_cv_t<element_type>;
 
         using extents_type = Extents;
-        using index_type   = extents_type::index_type;
-        using size_type    = extents_type::size_type;
-        using rank_type    = extents_type::rank_type;
+        using index_type   = typename extents_type::index_type;
+        using size_type    = typename extents_type::size_type;
+        using rank_type    = typename extents_type::rank_type;
 
         using layout_type  = LayoutPolicy;
-        using mapping_type = layout_type::template mapping<extents_type>;
+        using mapping_type = typename layout_type::template mapping<extents_type>;
 
-        using accessor_type    = AccessorPolicy::read_accessor_type;
+        using accessor_type    = typename AccessorPolicy::read_accessor_type;
         using reference        = typename accessor_type::reference;
         using data_handle_type = typename accessor_type::data_handle_type;
 
         using coord_type    = std::array<index_type, mdspan_type::rank()>;
-        using iterator_type = TensorIterator<Tensor>;
+        using iterator_type = TensorSpanIterator<TensorSpan>;
 
     //
     // Member functions
@@ -88,70 +88,69 @@ class Tensor<const T, Extents, LayoutPolicy, AccessorPolicy> {
     // Constructors
     //
     public:
-        constexpr Tensor() = default;
+        constexpr TensorSpan() = default;
+        constexpr TensorSpan(const TensorSpan&) = default;
+        constexpr TensorSpan(TensorSpan&&) = default;
 
         template <typename... IndexTypes>
             requires((std::is_convertible_v<IndexTypes, index_type> && ...))
-        explicit constexpr Tensor(data_handle_type p, IndexTypes... extents)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(extents...))) {}
+        explicit constexpr TensorSpan(data_handle_type p, IndexTypes... exts)
+            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts...))) {}
 
         template <typename OtherExtents>
             requires detail::is_extents_v<OtherExtents>
-        constexpr Tensor(data_handle_type p, const OtherExtents& extents)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(extents)) {}
+        constexpr TensorSpan(data_handle_type p, const OtherExtents& exts)
+            : _mdspan(accessor_type::write_cast(p), mapping_type(exts)) {}
 
         template <typename OtherExtents>
             requires detail::is_extents_v<OtherExtents>
-        constexpr Tensor(data_handle_type p, const OtherExtents& extents, const coord_type& strides)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(extents, strides)) {}
+        constexpr TensorSpan(data_handle_type p, const OtherExtents& exts, const coord_type& strides)
+            : _mdspan(accessor_type::write_cast(p), mapping_type(exts, strides)) {}
 
-        constexpr Tensor(data_handle_type p, const coord_type& extents)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(extents))) {}
+        constexpr TensorSpan(data_handle_type p, const coord_type& exts)
+            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts))) {}
 
-        constexpr Tensor(data_handle_type p, const coord_type& extents, const coord_type& strides)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(extents), strides)) {}
+        constexpr TensorSpan(data_handle_type p, const coord_type& exts, const coord_type& strides)
+            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts), strides)) {}
 
-        constexpr Tensor(data_handle_type p, const mapping_type& mapping)
+        constexpr TensorSpan(data_handle_type p, const mapping_type& mapping)
             : _mdspan(accessor_type::write_cast(p), mapping) {}
-
-        constexpr Tensor(const Tensor&) = default;
-        constexpr Tensor(Tensor&&) = default;
 
     // Subtensor constructors
     protected:
-        explicit constexpr Tensor(const Tensor& parent, const extents_type& extents)
-            : _mdspan(parent._mdspan.data_handle(), mapping_type(parent.mapping().submap(extents)), parent._mdspan.accessor()) {}
+        explicit constexpr TensorSpan(const TensorSpan& parent, const extents_type& exts)
+            : _mdspan(parent._mdspan.data_handle(), mapping_type(parent.mapping().submap(exts)), parent._mdspan.accessor()) {}
 
-        explicit constexpr Tensor(const Tensor& parent, const extents_type& extents, const coord_type& offsets)
-            : _mdspan(parent._mdspan.accessor().offset(parent._mdspan.data_handle(), std::apply(parent.mapping(), offsets)), mapping_type(parent.mapping().submap(extents, offsets)), parent._mdspan.accessor()) {}
+        explicit constexpr TensorSpan(const TensorSpan& parent, const extents_type& exts, const coord_type& offsets)
+            : _mdspan(parent._mdspan.accessor().offset(parent._mdspan.data_handle(), std::apply(parent.mapping(), offsets)), mapping_type(parent.mapping().submap(exts, offsets)), parent._mdspan.accessor()) {}
 
     public:
         template<typename E>
             requires std::is_same_v<E, extents_type>
-        constexpr Tensor subtensor(const extents_type& extents) const {
-            return Tensor(*this, extents);
+        constexpr TensorSpan subspan(const extents_type& exts) const {
+            return TensorSpan(*this, exts);
         }
 
         template<typename E>
             requires std::is_same_v<E, extents_type>
-        constexpr Tensor subtensor(const extents_type& extents, const coord_type& offsets) const {
-            return Tensor(*this, extents, offsets);
+        constexpr TensorSpan subspan(const extents_type& exts, const coord_type& offsets) const {
+            return TensorSpan(*this, exts, offsets);
         }
 
-        constexpr Tensor subtensor(const coord_type& extents) const {
-            return Tensor(*this, extents_type(extents));
+        constexpr TensorSpan subspan(const coord_type& exts) const {
+            return TensorSpan(*this, extents_type(exts));
         }
 
-        constexpr Tensor subtensor(const coord_type& extents, const coord_type& offsets) const {
-            return Tensor(*this, extents_type(extents), offsets);
+        constexpr TensorSpan subspan(const coord_type& exts, const coord_type& offsets) const {
+            return TensorSpan(*this, extents_type(exts), offsets);
         }
 
     //
     // Modifiers
     // 
     public:
-        void swap(Tensor& t) { std::swap(*this, t); }
-        void swap(Tensor&& t) { std::swap(*this, t); }
+        void swap(TensorSpan& t) { std::swap(*this, t); }
+        void swap(TensorSpan&& t) { std::swap(*this, t); }
 
     //
     // Element access
@@ -166,6 +165,10 @@ class Tensor<const T, Extents, LayoutPolicy, AccessorPolicy> {
             return _mdspan(idxs...);
 #endif
 
+        }
+
+        reference access(size_t i) const {
+            return accessor().access(data_handle(), i);
         }
 
     //
@@ -187,10 +190,10 @@ template <
     typename LayoutPolicy,
     typename AccessorPolicy
 >
-class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPolicy::read_accessor_type> {
+class TensorSpan : public TensorSpan<const T, Extents, LayoutPolicy, typename AccessorPolicy::read_accessor_type> {
 
     public:
-        using base_type = Tensor<std::add_const_t<T>, Extents, LayoutPolicy, typename AccessorPolicy::read_accessor_type>;
+        using base_type = TensorSpan<std::add_const_t<T>, Extents, LayoutPolicy, typename AccessorPolicy::read_accessor_type>;
 
     //
     // Data members
@@ -203,7 +206,7 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
     //
     public:
         using element_type = T;
-        using value_type   = std::remove_cv_t<T>;
+        using value_type   = std::remove_cv_t<element_type>;
 
         using extents_type = typename base_type::extents_type;
         using index_type   = typename base_type::index_type;
@@ -213,12 +216,12 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
         using layout_type  = typename base_type::layout_type;
         using mapping_type = typename base_type::mapping_type;
 
-        using accessor_type    = AccessorPolicy::write_accessor_type;
+        using accessor_type    = typename AccessorPolicy::write_accessor_type;
         using reference        = typename accessor_type::reference;
         using data_handle_type = typename accessor_type::data_handle_type;
 
         using coord_type    = typename base_type::coord_type;
-        using iterator_type = TensorIterator<Tensor>;
+        using iterator_type = TensorSpanIterator<TensorSpan>;
 
     //
     // Member functions
@@ -252,70 +255,70 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
     // Constructors
     //
     public:
-        constexpr Tensor() = default;
+        constexpr TensorSpan() = default;
 
         template <typename... IndexTypes>
             requires((std::is_convertible_v<IndexTypes, index_type> && ...))
-        explicit constexpr Tensor(data_handle_type p, IndexTypes... extents)
-            : base_type(p, extents...) {}
+        explicit constexpr TensorSpan(data_handle_type p, IndexTypes... exts)
+            : base_type(p, exts...) {}
 
         template <typename OtherExtents>
             requires detail::is_extents_v<OtherExtents>
-        constexpr Tensor(data_handle_type p, const OtherExtents& extents)
-            : base_type(p, extents) {}
+        constexpr TensorSpan(data_handle_type p, const OtherExtents& exts)
+            : base_type(p, exts) {}
 
         template <typename OtherExtents>
             requires detail::is_extents_v<OtherExtents>
-        constexpr Tensor(data_handle_type p, const OtherExtents& extents, const coord_type& strides)
-            : base_type(p, extents, strides) {}
+        constexpr TensorSpan(data_handle_type p, const OtherExtents& exts, const coord_type& strides)
+            : base_type(p, exts, strides) {}
 
-        constexpr Tensor(data_handle_type p, const coord_type& extents)
-            : base_type(p, extents) {}
+        constexpr TensorSpan(data_handle_type p, const coord_type& exts)
+            : base_type(p, exts) {}
 
-        constexpr Tensor(data_handle_type p, const coord_type& extents, const coord_type& strides)
-            : base_type(p, extents, strides) {}
+        constexpr TensorSpan(data_handle_type p, const coord_type& exts, const coord_type& strides)
+            : base_type(p, exts, strides) {}
 
-        constexpr Tensor(data_handle_type p, const mapping_type& mapping)
+        constexpr TensorSpan(data_handle_type p, const mapping_type& mapping)
             : base_type(p, mapping) {}
 
-        constexpr Tensor(const Tensor&) = default;
-        constexpr Tensor(Tensor&&) = default;
+        constexpr TensorSpan(const TensorSpan&) = default;
+        constexpr TensorSpan(TensorSpan&&) = default;
 
     // Subtensor constructors
     protected:
-        explicit constexpr Tensor(const Tensor& parent, const extents_type& extents)
-            : base_type(parent, extents) {}
+        explicit constexpr TensorSpan(const TensorSpan& parent, const extents_type& exts)
+            : base_type(parent, exts) {}
 
-        explicit constexpr Tensor(const Tensor& parent, const extents_type& extents, const coord_type& offsets)
-            : base_type(parent, extents, offsets) {}
+        explicit constexpr TensorSpan(const TensorSpan& parent, const extents_type& exts, const coord_type& offsets)
+            : base_type(parent, exts, offsets) {}
 
     public:
         template<typename E>
             requires std::is_same_v<E, extents_type>
-        constexpr Tensor subtensor(const extents_type& extents) const {
-           return Tensor(*this, extents);
+        constexpr TensorSpan subspan(const extents_type& exts) const {
+           return TensorSpan(*this, exts);
         }
 
         template<typename E>
             requires std::is_same_v<E, extents_type>
-        constexpr Tensor subtensor(const extents_type& extents, const coord_type& offsets) const {
-           return Tensor(*this, extents, offsets);
+        constexpr TensorSpan subspan(const extents_type& exts, const coord_type& offsets) const {
+           return TensorSpan(*this, exts, offsets);
         }
 
-        constexpr Tensor subtensor(const coord_type& extents) const {
-           return Tensor(*this, extents_type(extents));
+        constexpr TensorSpan subspan(const coord_type& exts) const {
+           return TensorSpan(*this, extents_type(exts));
         }
 
-        constexpr Tensor subtensor(const coord_type& extents, const coord_type& offsets) const {
-           return Tensor(*this, extents_type(extents), offsets);
+        constexpr TensorSpan subspan(const coord_type& exts, const coord_type& offsets) const {
+           return TensorSpan(*this, extents_type(exts), offsets);
         }
 
     //
     // Modifiers
     // 
     public:
-        void swap(Tensor& t) { std::swap(*this, t); }
-        void swap(Tensor&& t) { std::swap(*this, t); }
+        void swap(TensorSpan& t) { std::swap(*this, t); }
+        void swap(TensorSpan&& t) { std::swap(*this, t); }
 
     //
     // Operator =
@@ -324,7 +327,7 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
         // TODO: add runtime debug assert on extents match
         template <typename U>
             requires IsElementwiseExprCompatible<U>
-        Tensor& operator=(const U& other) {
+        TensorSpan& operator=(const U& other) {
             // for (size_type i = 0; i < this->size(); ++i) {
             //    operator[](i) = other[i];
             // }
@@ -341,7 +344,7 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
 
         // TODO: optimize
         // TODO: add runtime debug assert on extents match
-        Tensor& operator=(const Tensor& other) {
+        TensorSpan& operator=(const TensorSpan& other) {
             if (static_cast<const void*>(this) != static_cast<const void*>(&other)) {
                 auto it = begin();
                 auto end_it = end();
@@ -353,12 +356,12 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
             return *this;
         }
 
-        Tensor& operator=(Tensor&& other) {
+        TensorSpan& operator=(TensorSpan&& other) {
             this->_mdspan = std::move(other._mdspan);
             return *this;
         }
 
-        Tensor& operator=(base_type&& other) {
+        TensorSpan& operator=(base_type&& other) {
             this->_mdspan = std::move(other._mdspan);
             return *this;
         }
@@ -375,6 +378,10 @@ class Tensor : public Tensor<const T, Extents, LayoutPolicy, typename AccessorPo
 #else
             return this->_mdspan(idxs...);
 #endif
+        }
+
+        reference access(size_t i) const {
+            return accessor().access(data_handle(), i);
         }
 
     //

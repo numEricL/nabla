@@ -1,8 +1,11 @@
 #ifndef NABLA_TYPES_HPP
 #define NABLA_TYPES_HPP
 
+#include <vector>
 #include "mdspan/mdspan.hpp" // for extents and MDSPAN_IMPL_STANDARD_NAMESPACE
 
+namespace nabla{}
+namespace nb = nabla;
 namespace mdspan_ns = Kokkos;
 
 namespace nabla {
@@ -16,12 +19,18 @@ namespace nabla {
     class default_accessor;
 
     template <
-        typename T,
+        typename ElementType,
         typename Extents,
         typename LayoutPolicy = nabla::LeftStrided,
-        typename AccessorPolicy = default_accessor<T>
-    >
-    class Tensor;
+        typename AccessorPolicy = default_accessor<ElementType>
+    > class TensorSpan;
+
+    template <
+        typename ElementType,
+        typename Extents,
+        typename LayoutPolicy,
+        typename Container = std::vector<ElementType>
+    > class TensorArray;
 
     struct ElementwiseExprTag {};
 
