@@ -57,20 +57,13 @@ template <typename T>
 concept IsTensorArray = detail::impl_is_tensor_array<std::remove_cvref_t<T>>::value;
 
 //
-// Tensor Concepts
-//
-
-template <typename T>
-concept IsTensor = IsTensorSpan<T> || IsTensorArray<T>;
-
-//
 // Expression Concepts
 //
 template <typename T>
-concept IsElementwiseExpr = std::is_base_of_v<ElementwiseExprTag, T>;
+concept IsTensorExpr = std::is_base_of_v<ExprTag, std::remove_cvref_t<T>>;
 
 template <typename T>
-concept IsElementwiseExprCompatible = IsTensorSpan<T> || IsElementwiseExpr<T>;
+concept IsSpanOrExpr = IsTensorSpan<T> || IsTensorExpr<T>;
 
 template <typename T, T::rank_type rank>
 concept IsRankN = T::rank() == rank;
@@ -85,6 +78,13 @@ concept IsExprIterator = std::is_base_of_v<ExprIteratorTag, T>;
 
 template <typename T>
 concept IsExprIteratorCompatible = IsTensorSpanIterator<T> || IsExprIterator<T>;
+
+//
+// Tensor Concepts
+//
+template <typename T>
+concept IsTensorLike = IsTensorSpan<T> || IsTensorArray<T> || IsTensorExpr<T>;
+
 
 } // namespace nabla
 

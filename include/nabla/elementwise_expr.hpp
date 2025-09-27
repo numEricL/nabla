@@ -16,8 +16,8 @@
 namespace nabla {
 
 template <typename Op, typename... Inputs>
-    requires (IsElementwiseExprCompatible<Inputs> && ...)
-class ExprElementWiseOp;
+    requires (IsSpanOrExpr<Inputs> && ...)
+class ExprOp;
 
 // base case: collect_leaf_ptrs for a leaf nodes
 template <typename T>
@@ -27,7 +27,7 @@ auto collect_leaf_ptrs(T& leaf) {
 }
 
 template <typename Op, typename... Inputs>
-auto collect_leaf_ptrs(ExprElementWiseOp<Op, Inputs...>& expr) {
+auto collect_leaf_ptrs(ExprOp<Op, Inputs...>& expr) {
     return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
         return std::tuple_cat(collect_leaf_ptrs(std::get<Is>(expr._inputs))...);
     }(std::index_sequence_for<Inputs...>{});
@@ -35,8 +35,8 @@ auto collect_leaf_ptrs(ExprElementWiseOp<Op, Inputs...>& expr) {
 
 // N-ary expression template
 template <typename Op, typename... Inputs>
-    requires (IsElementwiseExprCompatible<Inputs> && ...)
-class ExprElementWiseOp : public ElementwiseExprTag {
+    requires (IsSpanOrExpr<Inputs> && ...)
+class ExprOp : public ExprTag {
     Op _op;
     std::tuple<Inputs...> _inputs;
     using input1_t = std::tuple_element_t<0, std::tuple<Inputs...>>;
@@ -71,10 +71,10 @@ class ExprElementWiseOp : public ElementwiseExprTag {
         // Constructors
         //
 
-         ExprElementWiseOp(const Op& op, const Inputs&... inputs)
+         ExprOp(const Op& op, const Inputs&... inputs)
             : _op(op), _inputs(inputs...) {}
 
-         ExprElementWiseOp(Op&& op, Inputs&&... inputs)
+         ExprOp(Op&& op, Inputs&&... inputs)
             : _op(std::move(op)), _inputs(std::move(inputs)...) {}
 
         // TODO: remove in favor of iterator-based access
@@ -95,7 +95,7 @@ class ExprElementWiseOp : public ElementwiseExprTag {
         }
 
         template <typename Op_, typename... Inputs_>
-        friend auto collect_leaf_ptrs(ExprElementWiseOp<Op_, Inputs_...>& expr);
+        friend auto collect_leaf_ptrs(ExprOp<Op_, Inputs_...>& expr);
 
         auto inputs() {
             return collect_leaf_ptrs(*this);
@@ -128,96 +128,108 @@ class ExprElementWiseOp : public ElementwiseExprTag {
         }
 };
 
+// decltype(auto) to preserve perfect forwarding
+template <typename T>
+requires IsTensorLike<T>
+decltype(auto) span_or_forward(T&& input) {
+    if constexpr (IsTensorArray<std::remove_cvref_t<T>>) {
+        return input.to_span();
+    } else {
+        return std::forward<T>(input);
+    }
+}
+
 //helper to decay input types (e.g. const T& -> T)
 template <typename Op, typename... Inputs>
-auto make_expr_element_wise_op(Op&& op, Inputs&&... inputs) {
-    return ExprElementWiseOp< std::decay_t<Op>, std::decay_t<Inputs>... >{
-        std::forward<Op>(op), std::forward<Inputs>(inputs)...
+auto make_expr_op(Op&& op, Inputs&&... inputs) {
+    return ExprOp<std::decay_t<Op>, std::decay_t<decltype(span_or_forward(std::forward<Inputs>(inputs)))>...>{
+        std::forward<Op>(op), span_or_forward(std::forward<Inputs>(inputs))...
     };
 }
 
 // Operator overloads: Arithmetic operations (+ - * / % -)
 template <typename In1, typename In2>
-    requires (IsElementwiseExprCompatible<In1> && IsElementwiseExprCompatible<In2>)
+    requires (IsTensorLike<In1> && IsTensorLike<In2>)
 auto operator+(In1&& input1, In2&& input2) {
-    return make_expr_element_wise_op( std::plus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
+    return make_expr_op( std::plus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
 template <typename In>
-    requires IsElementwiseExprCompatible<In>
+    requires IsTensorLike<In>
 auto operator+(In&& input, typename std::remove_cvref_t<In>::value_type scalar) {
-    return make_expr_element_wise_op( [scalar](auto x) { return x + scalar; }, std::forward<In>(input));
+    return make_expr_op( [scalar](auto x) { return x + scalar; }, std::forward<In>(input));
 }
 
 template <typename In>
-    requires IsElementwiseExprCompatible<In>
+    requires IsTensorLike<In>
 auto operator+(typename std::remove_cvref_t<In>::value_type scalar, In&& input) {
-    return make_expr_element_wise_op( [scalar](auto x) { return scalar + x; }, std::forward<In>(input));
+    return make_expr_op( [scalar](auto x) { return scalar + x; }, std::forward<In>(input));
 }
 
 template <typename In1, typename In2>
-    requires (IsElementwiseExprCompatible<In1> && IsElementwiseExprCompatible<In2>)
+    requires (IsTensorLike<In1> && IsTensorLike<In2>)
 auto operator-(In1&& input1, In2&& input2) {
-    return make_expr_element_wise_op( std::minus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
+    return make_expr_op( std::minus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
 template <typename In>
-    requires IsElementwiseExprCompatible<In>
+    requires IsTensorLike<In>
 auto operator-(In&& input, typename std::remove_cvref_t<In>::value_type scalar) {
-    return make_expr_element_wise_op( [scalar](auto x) { return x - scalar; }, std::forward<In>(input));
+    return make_expr_op( [scalar](auto x) { return x - scalar; }, std::forward<In>(input));
 }
 
 template <typename In>
-    requires IsElementwiseExprCompatible<In>
+    requires IsTensorLike<In>
 auto operator-(typename std::remove_cvref_t<In>::value_type scalar, In&& input) {
-    return make_expr_element_wise_op( [scalar](auto x) { return scalar - x; }, std::forward<In>(input));
+    return make_expr_op( [scalar](auto x) { return scalar - x; }, std::forward<In>(input));
 }
 
 template <typename In1, typename In2>
-    requires (IsElementwiseExprCompatible<In1> && IsElementwiseExprCompatible<In2>)
+    requires (IsTensorLike<In1> && IsTensorLike<In2>)
 auto operator*(In1&& input1, In2&& input2) {
-    return make_expr_element_wise_op( std::multiplies<>(), std::forward<In1>(input1), std::forward<In2>(input2));
+    return make_expr_op( std::multiplies<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
 template <typename In>
-    requires IsElementwiseExprCompatible<In>
+    requires IsTensorLike<In>
 auto operator*(In&& input, typename std::remove_cvref_t<In>::value_type scalar) {
-    return make_expr_element_wise_op( [scalar](auto x) { return x * scalar; }, std::forward<In>(input));
+    return make_expr_op( [scalar](auto x) { return x * scalar; }, std::forward<In>(input));
 }
 
 template <typename In>
-    requires IsElementwiseExprCompatible<In>
+    requires IsTensorLike<In>
 auto operator*(typename std::remove_cvref_t<In>::value_type scalar, In&& input) {
-    return make_expr_element_wise_op( [scalar](auto x) { return scalar * x; }, std::forward<In>(input));
+    return make_expr_op( [scalar](auto x) { return scalar * x; }, std::forward<In>(input));
 }
 
 template <typename In1, typename In2>
-    requires (IsElementwiseExprCompatible<In1> && IsElementwiseExprCompatible<In2>)
+    requires (IsTensorLike<In1> && IsTensorLike<In2>)
 auto operator/(In1&& input1, In2&& input2) {
-    return make_expr_element_wise_op( std::divides<>(), std::forward<In1>(input1), std::forward<In2>(input2));
+    return make_expr_op( std::divides<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
 template <typename In>
-    requires IsElementwiseExprCompatible<In>
+    requires IsTensorLike<In>
 auto operator/(In&& input, typename std::remove_cvref_t<In>::value_type scalar) {
-    return make_expr_element_wise_op( [scalar](auto x) { return x / scalar; }, std::forward<In>(input));
+    return make_expr_op( [scalar](auto x) { return x / scalar; }, std::forward<In>(input));
 }
 
 template <typename In1, typename In2>
-    requires (IsElementwiseExprCompatible<In1> && IsElementwiseExprCompatible<In2>)
+    requires (IsTensorLike<In1> && IsTensorLike<In2>)
 auto operator%(In1&& input1, In2&& input2) {
-    return make_expr_element_wise_op( std::modulus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
+    return make_expr_op( std::modulus<>(), std::forward<In1>(input1), std::forward<In2>(input2));
 }
 
 template <typename In>
-    requires IsElementwiseExprCompatible<In>
+    requires IsTensorLike<In>
 auto operator%(In&& input, typename std::remove_cvref_t<In>::value_type scalar) {
-    return make_expr_element_wise_op( [scalar](auto x) { return x % scalar; }, std::forward<In>(input));
+    return make_expr_op( [scalar](auto x) { return x % scalar; }, std::forward<In>(input));
 }
 
-template <typename In1>
-auto operator-(In1&& input1) {
-    return make_expr_element_wise_op( std::negate<>(), std::forward<In1>(input1));
+template <typename In>
+    requires IsTensorLike<In>
+auto operator-(In&& input) {
+    return make_expr_op( std::negate<>(), std::forward<In>(input));
 }
 
 } // namespace nabla

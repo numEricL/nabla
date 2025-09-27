@@ -40,7 +40,6 @@ int main() {
         }
     }
 
-
     std::cout << "TensorSpan a:\n" << a << "\n";
     std::cout << "TensorSpan b:\n" << b << "\n";
 

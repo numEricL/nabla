@@ -326,13 +326,8 @@ class TensorSpan : public TensorSpan<const T, Extents, LayoutPolicy, typename Ac
     public:
         // TODO: add runtime debug assert on extents match
         template <typename U>
-            requires IsElementwiseExprCompatible<U>
+            requires IsTensorLike<U>
         TensorSpan& operator=(const U& other) {
-            // for (size_type i = 0; i < this->size(); ++i) {
-            //    operator[](i) = other[i];
-            // }
-            // return *this;
-
             auto it = begin();
             auto end_it = end();
             auto other_it = other.begin();

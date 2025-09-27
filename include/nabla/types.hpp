@@ -32,7 +32,7 @@ namespace nabla {
         typename Container = std::vector<ElementType>
     > class TensorArray;
 
-    struct ElementwiseExprTag {};
+    struct ExprTag {};
 
     namespace detail {
         template <class T> struct impl_is_extents : ::std::false_type {};

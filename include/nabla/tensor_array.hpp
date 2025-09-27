@@ -3,6 +3,7 @@
 
 #include "mdspan/mdarray.hpp"
 #include "nabla/types.hpp"
+#include "nabla/tensor_span.hpp"
 #include "nabla/tensor_array_iterator.hpp"
 #include "nabla/utility/nested_initializer_list.hpp"
 
@@ -171,7 +172,7 @@ class TensorArray {
     public:
         // TODO: add runtime debug assert on extents match
         template <typename U>
-            requires IsElementwiseExprCompatible<U>
+            requires IsTensorLike<U>
         TensorArray& operator=(const U& other) {
             auto it = begin();
             auto end_it = end();
@@ -195,6 +196,8 @@ class TensorArray {
             }
             return *this;
         }
+
+        TensorArray& operator=(TensorArray&& other) = default;
 
     //
     // Modifiers
