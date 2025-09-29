@@ -13,8 +13,8 @@ int check(bool condition) {
 
 int main() {
     using fp = float;
-    using Map = nabla::LeftStrided::mapping<nabla::dims<2>>;
-    using TensorSpan = nabla::TensorSpan<fp, nabla::dims<2>, nabla::LeftStrided>;
+    using Map = nabla::LeftStride::mapping<nabla::dims<2>>;
+    using TensorSpan = nabla::TensorSpan<fp, nabla::dims<2>, nabla::LeftStride>;
     using tt = typename TensorSpan::value_type;
 
     Map map({2,3}, {2, 10});

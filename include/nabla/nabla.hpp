@@ -5,7 +5,7 @@
 
 #include "nabla/types.hpp"
 #include "nabla/concepts.hpp"
-#include "nabla/layouts.hpp"
+#include "nabla/layout.hpp"
 #include "nabla/tensor_span.hpp"
 #include "nabla/tensor_array.hpp"
 #include "nabla/elementwise_expr.hpp"

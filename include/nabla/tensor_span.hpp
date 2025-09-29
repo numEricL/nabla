@@ -1,5 +1,5 @@
-#ifndef NABLA_TENSOR_TENSOR_HPP
-#define NABLA_TENSOR_TENSOR_HPP
+#ifndef NABLA_TENSOR_SPAN_HPP
+#define NABLA_TENSOR_SPAN_HPP
 
 #include "mdspan/mdspan.hpp"
 #include "nabla/types.hpp"
@@ -119,7 +119,7 @@ class TensorSpan<const T, Extents, LayoutPolicy, AccessorPolicy> {
         constexpr TensorSpan(data_handle_type p, const mapping_type& mapping, const accessor_type& accessor)
             : _mdspan(accessor_type::write_cast(p), mapping, accessor.to_write()) {}
 
-    // Subtensor constructors
+    // Subspan constructors
     protected:
         explicit constexpr TensorSpan(const TensorSpan& parent, const extents_type& exts)
             : _mdspan(parent._mdspan.data_handle(), mapping_type(parent.mapping().submap(exts)), parent._mdspan.accessor()) {}
@@ -127,6 +127,7 @@ class TensorSpan<const T, Extents, LayoutPolicy, AccessorPolicy> {
         explicit constexpr TensorSpan(const TensorSpan& parent, const extents_type& exts, const coord_type& offsets)
             : _mdspan(parent._mdspan.accessor().offset(parent._mdspan.data_handle(), std::apply(parent.mapping(), offsets)), mapping_type(parent.mapping().submap(exts, offsets)), parent._mdspan.accessor()) {}
 
+    // Subspan
     public:
         template<typename E>
             requires std::is_same_v<E, extents_type>
@@ -152,8 +153,7 @@ class TensorSpan<const T, Extents, LayoutPolicy, AccessorPolicy> {
     // Modifiers
     // 
     public:
-        void swap(TensorSpan& t) { std::swap(*this, t); }
-        void swap(TensorSpan&& t) { std::swap(*this, t); }
+        void swap(TensorSpan& t) { std::swap(_mdspan, t._mdspan); }
 
     //
     // Element access
@@ -258,45 +258,10 @@ class TensorSpan : public TensorSpan<const T, Extents, LayoutPolicy, typename Ac
     // Constructors
     //
     public:
+        using base_type::base_type; // inherit constructors
         constexpr TensorSpan() = default;
         constexpr TensorSpan(const TensorSpan&) = default;
         constexpr TensorSpan(TensorSpan&&) = default;
-
-        template <typename... IndexTypes>
-            requires((std::is_convertible_v<IndexTypes, index_type> && ...))
-        explicit constexpr TensorSpan(data_handle_type p, IndexTypes... exts)
-            : base_type(p, exts...) {}
-
-        template <typename OtherExtents>
-            requires detail::is_extents_v<OtherExtents>
-        constexpr TensorSpan(data_handle_type p, const OtherExtents& exts)
-            : base_type(p, exts) {}
-
-        template <typename OtherExtents>
-            requires detail::is_extents_v<OtherExtents>
-        constexpr TensorSpan(data_handle_type p, const OtherExtents& exts, const coord_type& strides)
-            : base_type(p, exts, strides) {}
-
-        constexpr TensorSpan(data_handle_type p, const coord_type& exts)
-            : base_type(p, exts) {}
-
-        constexpr TensorSpan(data_handle_type p, const coord_type& exts, const coord_type& strides)
-            : base_type(p, exts, strides) {}
-
-        constexpr TensorSpan(data_handle_type p, const mapping_type& mapping)
-            : base_type(p, mapping) {}
-
-        constexpr TensorSpan(data_handle_type p, const mapping_type& mapping, const accessor_type& accessor)
-            : base_type(p, mapping, accessor) {}
-
-
-    // Subtensor constructors
-    protected:
-        explicit constexpr TensorSpan(const TensorSpan& parent, const extents_type& exts)
-            : base_type(parent, exts) {}
-
-        explicit constexpr TensorSpan(const TensorSpan& parent, const extents_type& exts, const coord_type& offsets)
-            : base_type(parent, exts, offsets) {}
 
     public:
         template<typename E>
@@ -323,8 +288,7 @@ class TensorSpan : public TensorSpan<const T, Extents, LayoutPolicy, typename Ac
     // Modifiers
     // 
     public:
-        void swap(TensorSpan& t) { std::swap(*this, t); }
-        void swap(TensorSpan&& t) { std::swap(*this, t); }
+        using base_type::swap;
 
     //
     // Operator =
@@ -400,4 +364,4 @@ class TensorSpan : public TensorSpan<const T, Extents, LayoutPolicy, typename Ac
 
 } // namespace nabla
 
-#endif // NABLA_TENSOR_TENSOR_HPP
+#endif // NABLA_TENSOR_SPAN_HPP

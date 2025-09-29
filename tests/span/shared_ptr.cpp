@@ -64,7 +64,7 @@ void shared_ptr_example() {
     for (int i = 0; i < 6; ++i) data[i] = i * 10;
 
     using extents_t = Kokkos::extents<std::size_t, 2, 3>;
-    using layout_t = nabla::LeftStrided;
+    using layout_t = nabla::LeftStride;
 
     using mdspan_t = Kokkos::mdspan<int, extents_t, layout_t, shared_ptr_accessor<int>>;
     using cmdspan_t = Kokkos::mdspan<const int, extents_t, layout_t, shared_ptr_accessor<const int>>;

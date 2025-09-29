@@ -7,8 +7,8 @@
 int main() {
     using Ext1 = nabla::dims<2>;
     using Ext2 = Kokkos::extents<int, 3, 4>;
-    using TArr1 = nabla::TensorArray<float, Ext1, nabla::LeftStrided>;
-    using TArr2 = nabla::TensorArray<float, Ext2, nabla::LeftStrided>;
+    using TArr1 = nabla::TensorArray<float, Ext1, nabla::LeftStride>;
+    using TArr2 = nabla::TensorArray<float, Ext2, nabla::LeftStride>;
 
     TArr1 t1{3, 4};
     TArr2 t2{3, 4};

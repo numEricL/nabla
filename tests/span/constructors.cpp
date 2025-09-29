@@ -12,7 +12,7 @@ int main() {
     using Ext1 = Kokkos::dextents<size_t, 2>;
     using Ext2 = Kokkos::dextents<int, 2>;
     using Arr1 = std::array<size_t, 2>;
-    using TensorSpan = nabla::TensorSpan<float, Ext1, nabla::LeftStrided>;
+    using TensorSpan = nabla::TensorSpan<float, Ext1, nabla::LeftStride, nabla::read_only_accessor<float>>;
 
     std::vector<float> vec(1000);
 

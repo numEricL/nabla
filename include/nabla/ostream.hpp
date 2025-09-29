@@ -7,7 +7,7 @@
 #include <string>
 #include <type_traits>
 
-#include "nabla/layouts/left_strided.hpp" // remove once we support all layouts
+#include "nabla/layout/left_stride.hpp" // remove once we support all layouts
 
 namespace nabla {
 namespace detail {
@@ -62,8 +62,8 @@ void print2d(std::ostream& os, const MatT& mat) {
 
 // TODO: enable for all layouts
 template <typename Extents>
-std::ostream& operator<<(std::ostream& os, const typename LeftStrided::mapping<Extents>& mapping) {
-    using MappingT = typename LeftStrided::mapping<Extents>;
+std::ostream& operator<<(std::ostream& os, const typename LeftStride::mapping<Extents>& mapping) {
+    using MappingT = typename LeftStride::mapping<Extents>;
     using Index = MappingT::index_type;
 
     detail::print2d<Index>(os, mapping);

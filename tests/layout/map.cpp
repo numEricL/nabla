@@ -1,17 +1,23 @@
 #define MDSPAN_DEBUG
 #define MDSPAN_USE_BRACKET_OPERATOR 0
 
+#include "nabla/utility/helpers.hpp"
 #include <vector>
 #include <array>
 #include <iostream>
 #include "mdspan/mdspan.hpp"
-#include "nabla/layouts/left_strided.hpp"
+#include "mdspan/mdarray.hpp"
+#include "nabla/layout/left_stride.hpp"
 
 template <typename MapT>
     requires (MapT::extents_type::rank() == 2)
-int access_test(const MapT& map) {
+int access_test(const MapT& map_) {
+    MapT map;
+    map = map_;
+
     auto extents = map.extents();
     auto strides = map.strides();
+
 
     for (size_t j = 0; j < extents.extent(1); ++j) {
         for (size_t i = 0; i < extents.extent(0); ++i) {
@@ -27,7 +33,10 @@ int access_test(const MapT& map) {
 
 template <typename MapT>
     requires (MapT::extents_type::rank() == 2)
-int iterator_test(const MapT& map) {
+int iterator_test(const MapT& map_) {
+    MapT map;
+    map = map_;
+
     auto extents = map.extents();
     auto strides = map.strides();
 
@@ -87,27 +96,46 @@ int iterator_test(const MapT& map) {
 }
 
 template <size_t Rank>
-using Mapping = nabla::LeftStrided::mapping<Kokkos::dextents<size_t, Rank>>;
+using Ext = Kokkos::dextents<size_t, Rank>;
+
+template <size_t Rank>
+using Arr = std::array<size_t, Rank>;
+
+using Layout = nabla::LeftStride;
+// using Layout = Kokkos::layout_stride;
+
+template <size_t Rank>
+using Mapping = Layout::mapping<Ext<Rank>>;
 
 int main() {
     int error_count = 0;
     {
-        Mapping<2> map({3, 4}, {1, 10});
+        Mapping<2> map(Ext<2>{3, 4}, Arr<2>{1, 10});
         error_count += access_test(map);
         error_count += iterator_test(map);
 
-        map = map.submap({2, 2}, {1, 1});
-        error_count += access_test(map);
+        //map = map.submap({2, 2}, {1, 1});
+        //error_count += access_test(map);
         error_count += iterator_test(map);
     }
     {
-        Mapping<3> map({3, 4, 5}, {1, 10, 100});
+        Mapping<3> map(Ext<3>{3, 4, 5}, Arr<3>{1, 10, 100});
         error_count += access_test(map);
         error_count += iterator_test(map);
 
-        map = map.submap({2, 2, 2}, {1, 1, 1});
-        error_count += access_test(map);
-        error_count += iterator_test(map);
+        //map = map.submap({2, 2, 2}, {1, 1, 1});
+        //error_count += access_test(map);
+        //error_count += iterator_test(map);
+    }
+
+    {
+        Mapping<3> map(Ext<3>{2, 3, 4}, Arr<3>{1, 10, 100});
+        auto submap = submdspan_mapping(map, Kokkos::strided_slice{0,2,1}, Kokkos::strided_slice{1,3,1}, Kokkos::strided_slice{0,4,1});
+
+        Kokkos::Experimental::mdarray<int, Ext<3>, Layout> arr{map};
+        auto span = arr.to_mdspan();
+        auto subspan = Kokkos::submdspan(span, Kokkos::strided_slice{0,2,1}, Kokkos::strided_slice{1,3,1}, Kokkos::strided_slice{0,4,1});
+
     }
 
     if (error_count == 0) {

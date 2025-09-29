@@ -3,15 +3,19 @@
 
 #include <array>
 #include "mdspan/mdspan.hpp"
-#include "nabla/layouts/left_strided.hpp"
+#include "nabla/layout/left_stride.hpp"
 
 int main() {
 
-    using Ext1 = Kokkos::dextents<size_t, 2>;
-    using Ext2 = Kokkos::dextents<int, 2>;
+    //using Ext1 = Kokkos::dextents<size_t, 2>;
+    //using Ext2 = Kokkos::dextents<int, 2>;
+
+    using Ext1 = Kokkos::extents<size_t, 3, 4>;
+    using Ext2 = Kokkos::extents<int, 3, 4>;
     using Arr1 = std::array<size_t, 2>;
     using Arr2 = std::array<int, 2>;
-    using Mapping = nabla::LeftStrided::mapping<Ext1>;
+    using Mapping = nabla::LeftStride::mapping<Ext1>;
+    //using Mapping = Kokkos::layout_stride::mapping<Ext1>;
 
     // default constructor
     {
@@ -21,8 +25,9 @@ int main() {
     // constructor 1
     {
         Ext1 extents1{3, 4};
-        Ext2 extents2{3, 4};
         Arr1 strides1{1, 10};
+
+        Ext2 extents2{3, 4};
         Arr2 strides2{1, 10};
 
         Mapping map1(extents1, strides1);
@@ -35,8 +40,8 @@ int main() {
         //Mapping map7(Ext1{3,4}, Arr2{1, 10}); // compiler error
         //Mapping map8(Ext2{3,4}, Arr2{1, 10}); // compiler error
 
-        Mapping map9(Ext1{3,4}, {1, 10});
-        Mapping map10(Ext2{3,4}, {1, 10});
+         Mapping map9(Ext1{3,4}, {1, 10});
+         Mapping map10(Ext2{3,4}, {1, 10});
     }
 
     // constructor 2
@@ -53,22 +58,31 @@ int main() {
     // constructor 3
     {
         Arr1 extents1{3, 4};
-        Arr2 extents2{3, 4};
         Arr1 strides1{1, 10};
+
+        Arr2 extents2{3, 4};
         Arr2 strides2{1, 10};
 
 
         Mapping map1(extents1, strides1);
-        //Mapping map2(extents2, strides1); // compiler error
-        //Mapping map3(extents1, strides2); // compiler error
-        //Mapping map4(extents2, strides2); // compiler error
+        Mapping map2(extents1, Arr1{1, 10});
+        Mapping map3(extents1, {1, 10});
 
-        Mapping map5(Arr1{3,4}, Arr1{1, 10});
-        //Mapping map6(Arr2{3,4}, Arr1{1, 10}); // compiler error
-        //Mapping map7(Arr1{3,4}, Arr2{1, 10}); // compiler error
-        //Mapping map8(Arr2{3,4}, Arr2{1, 10}); // compiler error
+        Mapping map4(Ext1{3,4}, strides1);
+        Mapping map5(Ext1{3,4}, Arr1{1, 10});
+        Mapping map6(Ext1{3,4}, {1, 10});
 
+        Mapping map7({3,4}, strides1);
+        Mapping map8({3,4}, Arr1{1, 10});
         Mapping map9({3,4}, {1, 10});
+
+        //Mapping map10(extents2, strides1); // compiler error
+        //Mapping map11(extents1, strides2); // compiler error
+        //Mapping map12(extents2, strides2); // compiler error
+
+        //Mapping map13(Arr2{3,4}, Arr1{1, 10}); // compiler error
+        //Mapping map14(Arr1{3,4}, Arr2{1, 10}); // compiler error
+        //Mapping map15(Arr2{3,4}, Arr2{1, 10}); // compiler error
     }
 
     // constructor 4

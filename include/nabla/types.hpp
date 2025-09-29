@@ -13,7 +13,7 @@ namespace nabla {
     template< std::size_t Rank, typename IndexT = std::size_t >
     using dims = typename mdspan_ns::dextents<IndexT, Rank>;
 
-    struct LeftStrided;
+    struct LeftStride;
 
     template <typename T>
     class default_accessor;
@@ -21,7 +21,7 @@ namespace nabla {
     template <
         typename ElementType,
         typename Extents,
-        typename LayoutPolicy = nabla::LeftStrided,
+        typename LayoutPolicy = nabla::LeftStride,
         typename AccessorPolicy = default_accessor<ElementType>
     > class TensorSpan;
 
@@ -41,7 +41,7 @@ namespace nabla {
         struct impl_is_extents<::MDSPAN_IMPL_STANDARD_NAMESPACE::extents<IndexType, ExtentsPack...>> : ::std::true_type {};
 
         template <class T>
-        inline constexpr bool is_extents_v = impl_is_extents<T>::value;
+        inline constexpr bool is_extents_v = impl_is_extents<std::remove_cvref_t<T>>::value;
     } // namespace detail
 
     // TODO: remove

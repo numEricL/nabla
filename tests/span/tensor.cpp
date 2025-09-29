@@ -80,7 +80,7 @@ int test_assignment(TensorT& mat1, TensorT& mat2) {
 }
 
 int main() {
-    using Layout = nabla::LeftStrided;
+    using Layout = nabla::LeftStride;
     using TensorType = nabla::TensorSpan<int, nabla::dims<2>, Layout>;
 
     Layout::mapping<nabla::dims<2>> map1({4,4}, {1,10});
