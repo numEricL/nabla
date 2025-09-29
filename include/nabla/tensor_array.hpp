@@ -6,7 +6,7 @@
 #include "nabla/tensor_span.hpp"
 #include "nabla/tensor_array_iterator.hpp"
 #include "nabla/default_accessor.hpp"
-#include "nabla/utility/nested_initializer_list.hpp"
+#include "nabla/nested_initializer_list.hpp"
 
 namespace nabla {
 
@@ -89,6 +89,17 @@ class TensorArray {
         constexpr TensorArray() requires(extents_type::rank_dynamic() != 0) = default;
         constexpr TensorArray(const TensorArray&) = default;
         constexpr TensorArray(TensorArray&&) = default;
+
+        // initializer list constructors
+        explicit TensorArray(NestedInitializerList<element_type, extents_type::rank()> list)
+            : _mdarray(extents_type(detail::get_extents_from_initializer_list<element_type, extents_type::rank()>(list))) {
+            detail::fill_array_from_initializer_list<extents_type::rank()>(list, _mdarray);
+        }
+
+        explicit TensorArray(NestedInitializerList<element_type, extents_type::rank()> list, const coord_type& strides)
+            : _mdarray(mapping_type(extents_type(detail::get_extents_from_initializer_list<element_type, extents_type::rank()>(list)), strides)) {
+            detail::fill_array_from_initializer_list<extents_type::rank()>(list, _mdarray);
+        }
 
         // non-initializing constructors
         template <typename... IndexTypes>

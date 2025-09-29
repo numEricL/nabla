@@ -36,6 +36,7 @@ void print2d(std::ostream& os, const MatT& mat) {
     auto m = mat.extents().extent(0);
     auto n = mat.extents().extent(1);
 
+    std::cout << "shape: (" << m << ", " << n << ")  stride: (" << mat.stride(0) << ", " << mat.stride(1) << ")\n";
     for (size_t row = 0; row < std::min<int>(m, fmt.max_rows); ++row) {
         os << "[";
         for (size_t col = 0; col < std::min<int>(n, fmt.max_cols); ++col) {

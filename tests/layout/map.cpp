@@ -1,7 +1,6 @@
 #define MDSPAN_DEBUG
 #define MDSPAN_USE_BRACKET_OPERATOR 0
 
-#include "nabla/utility/helpers.hpp"
 #include <vector>
 #include <array>
 #include <iostream>

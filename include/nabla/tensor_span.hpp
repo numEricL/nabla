@@ -5,7 +5,7 @@
 #include "nabla/types.hpp"
 #include "nabla/tensor_span_iterator.hpp"
 #include "nabla/default_accessor.hpp"
-#include "nabla/utility/nested_initializer_list.hpp"
+#include "nabla/nested_initializer_list.hpp"
 
 namespace nabla {
 

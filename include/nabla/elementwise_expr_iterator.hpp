@@ -49,10 +49,7 @@ class ExprIterator : public nabla::ExprIteratorTag {
         }
 
         ExprIterator& operator++() {
-            std::apply(
-                [](auto&... ins) {
-                    (void)std::initializer_list<int>{ (++ins, 0)... };
-                }, _inputs);
+            std::apply([](auto&... ins) { ((++ins), ...); }, _inputs);
             return *this;
         }
 

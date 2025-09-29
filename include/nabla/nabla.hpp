@@ -9,6 +9,8 @@
 #include "nabla/tensor_span.hpp"
 #include "nabla/tensor_array.hpp"
 #include "nabla/elementwise_expr.hpp"
+#include "nabla/subspan.hpp"
+
 //#include "nabla/ostream.hpp"
 //#include "nabla/debug/assert.hpp"
 
