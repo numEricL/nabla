@@ -87,15 +87,13 @@ int main() {
         using Arr1 = std::array<size_t, 2>;
         using TensorArray = nabla::TensorArray<float, Ext1, nabla::LeftStride>;
         TensorArray t1({{ 1, 2, 3 }, { 4, 5, 6 }});
-        TensorArray t2{{ 1, 2, 3 }, { 4, 5, 6 }};
+        TensorArray t2 = {{ 1, 2, 3 }, { 4, 5, 6 }};
 
         TensorArray t3({{ 1, 2, 3 }, { 4, 5, 6 }}, {1, 10});
-        TensorArray t4{{{ 1, 2, 3 }, { 4, 5, 6 }}, {2, 10}};
+        TensorArray t4 = {{{ 1, 2, 3 }, { 4, 5, 6 }}, {2, 10}};
 
-        std::cout << t1 << std::endl;
-        std::cout << t2 << std::endl;
-        std::cout << t3 << std::endl;
-        std::cout << t4 << std::endl;
+        TensorArray t5( {1, 2, 3, 4, 5, 6}, {2, 3});
+        TensorArray t6( {1, 2, 3, 4, 5, 6}, {2, 3}, {1, 10});
     }
 
     return 0;

@@ -77,14 +77,6 @@ class ExprOp : public ExprTag {
          ExprOp(Op&& op, Inputs&&... inputs)
             : _op(std::move(op)), _inputs(std::move(inputs)...) {}
 
-        // TODO: remove in favor of iterator-based access
-        auto operator[](size_t i) const {
-            return std::apply(
-                [&](auto const&... ins) {
-                    return _op(ins[i]...);
-                }, _inputs);
-        }
-
         template <typename... Args> requires (sizeof...(Args) == rank()) &&
             (std::conjunction_v<std::is_convertible<Args, index_type>...>)
         auto operator()(Args... args) const {

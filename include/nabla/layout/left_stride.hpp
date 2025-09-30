@@ -80,8 +80,10 @@ struct LeftStride {
             // For ADL use by submdspan
             template<class... SliceSpecifiers>
             friend constexpr auto submdspan_mapping(const mapping& src, SliceSpecifiers&&... slices) {
+                using SubExtents = decltype(mdspan_ns::submdspan_extents(src.extents(), slices...));
+                using SubMap = mapping<SubExtents>;
                 auto mdspan_mapping_result = submdspan_mapping(static_cast<const base_t&>(src), std::forward<SliceSpecifiers>(slices)...);
-                return mdspan_ns::submdspan_mapping_result<mapping>{mdspan_mapping_result.mapping, mdspan_mapping_result.offset};
+                return mdspan_ns::submdspan_mapping_result<SubMap>{mdspan_mapping_result.mapping, mdspan_mapping_result.offset};
             }
 
         //

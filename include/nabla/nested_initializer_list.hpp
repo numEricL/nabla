@@ -37,11 +37,6 @@ namespace detail {
     constexpr std::array<size_t, Rank> get_extents_from_initializer_list(NestedInitializerList<ElementType, Rank> list) {
         std::array<size_t, Rank> exts{};
         get_extents_from_initializer_list_impl<ElementType, Rank, Rank>(list, exts);
-        std::cout << "CONSTRUCTOR EXTENTS: ";
-        for (const auto& e : exts) {
-            std::cout << e << " ";
-        }
-        std::cout << std::endl;
         return exts;
     }
 
@@ -55,7 +50,11 @@ namespace detail {
             std::size_t i = 0;
             for (const auto& value : list) {
                 coord[coord.size() - 1] = i;
+#if MDSPAN_USE_BRACKET_OPERATOR
+                std::apply([&](auto&&... args) { array[args...] = value; }, coord);
+#else
                 std::apply([&](auto&&... args) { array(args...) = value; }, coord);
+#endif // MDSPAN_USE_BRACKET_OPERATOR
                 ++i;
             }
         } else {

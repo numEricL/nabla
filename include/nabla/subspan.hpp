@@ -19,6 +19,14 @@ subspan(const TensorSpan<ElementType, Extents, LayoutPolicy, AccessorPolicy> &sr
         sub_accessor_t(src.accessor()));
 }
 
+template <typename ElementType, typename Extents, typename LayoutPolicy,
+          typename Container, typename... SliceSpecifiers>
+constexpr auto
+subspan(const TensorArray<ElementType, Extents, LayoutPolicy, Container> &src,
+        SliceSpecifiers... slices) {
+    return subspan(src.to_span(), slices...);
+}
+
 } // namespace nabla
 
 #endif //NABLA_SUBSPAN_HPP

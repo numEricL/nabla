@@ -91,14 +91,19 @@ class TensorArray {
         constexpr TensorArray(TensorArray&&) = default;
 
         // initializer list constructors
-        explicit TensorArray(NestedInitializerList<element_type, extents_type::rank()> list)
+        TensorArray(NestedInitializerList<element_type, extents_type::rank()> list)
             : _mdarray(extents_type(detail::get_extents_from_initializer_list<element_type, extents_type::rank()>(list))) {
             detail::fill_array_from_initializer_list<extents_type::rank()>(list, _mdarray);
         }
 
-        explicit TensorArray(NestedInitializerList<element_type, extents_type::rank()> list, const coord_type& strides)
+        TensorArray(NestedInitializerList<element_type, extents_type::rank()> list, const coord_type& strides)
             : _mdarray(mapping_type(extents_type(detail::get_extents_from_initializer_list<element_type, extents_type::rank()>(list)), strides)) {
             detail::fill_array_from_initializer_list<extents_type::rank()>(list, _mdarray);
+        }
+
+        TensorArray(std::initializer_list<element_type> list, const coord_type& exts, const coord_type& strides)
+            : _mdarray(mapping_type(extents_type(exts), strides)) {
+            std::copy(list.begin(), list.end(), this->begin());
         }
 
         // non-initializing constructors
@@ -108,17 +113,17 @@ class TensorArray {
             : _mdarray(extents_type(exts...)) {}
 
         template <typename OtherExtents>
-            requires detail::is_extents_v<OtherExtents>
+            requires std::is_convertible_v<OtherExtents, extents_type>
         constexpr TensorArray(const OtherExtents& exts)
             : _mdarray(extents_type(exts)) {}
 
         template <typename OtherExtents>
-            requires detail::is_extents_v<OtherExtents>
+            requires std::is_convertible_v<OtherExtents, extents_type>
         constexpr TensorArray(const OtherExtents& exts, const coord_type& strides)
-            : _mdarray(mapping_type(exts, strides)) {}
+            : _mdarray(mapping_type(extents_type(exts), strides)) {}
 
         constexpr TensorArray(const coord_type& exts)
-            : _mdarray(mapping_type(exts)) {}
+            : _mdarray(mapping_type(extents_type(exts))) {}
 
         constexpr TensorArray(const coord_type& exts, const coord_type& strides)
             : _mdarray(mapping_type(extents_type(exts), strides)) {}
@@ -133,17 +138,17 @@ class TensorArray {
             : _mdarray(extents_type(exts...), ctr) {}
 
         template <typename OtherExtents>
-            requires detail::is_extents_v<OtherExtents>
+            requires std::is_convertible_v<OtherExtents, extents_type>
         constexpr TensorArray(const container_type& ctr, const OtherExtents& exts)
             : _mdarray(extents_type(exts), ctr) {}
 
         template <typename OtherExtents>
-            requires detail::is_extents_v<OtherExtents>
+            requires std::is_convertible_v<OtherExtents, extents_type>
         constexpr TensorArray(const container_type& ctr, const OtherExtents& exts, const coord_type& strides)
-            : _mdarray(mapping_type(exts, strides), ctr) {}
+            : _mdarray(mapping_type(extents_type(exts), strides), ctr) {}
 
         constexpr TensorArray(const container_type& ctr, const coord_type& exts)
-            : _mdarray(mapping_type(exts), ctr) {}
+            : _mdarray(mapping_type(extents_type(exts)), ctr) {}
 
         constexpr TensorArray(const container_type& ctr, const coord_type& exts, const coord_type& strides)
             : _mdarray(mapping_type(extents_type(exts), strides), ctr) {}
@@ -158,17 +163,17 @@ class TensorArray {
             : _mdarray(extents_type(exts...), std::move(ctr)) {}
 
         template <typename OtherExtents>
-            requires detail::is_extents_v<OtherExtents>
+            requires std::is_convertible_v<OtherExtents, extents_type>
         constexpr TensorArray(container_type&& ctr, const OtherExtents& exts)
             : _mdarray(extents_type(exts), std::move(ctr)) {}
 
         template <typename OtherExtents>
-            requires detail::is_extents_v<OtherExtents>
+            requires std::is_convertible_v<OtherExtents, extents_type>
         constexpr TensorArray(container_type&& ctr, const OtherExtents& exts, const coord_type& strides)
-            : _mdarray(mapping_type(exts, strides), std::move(ctr)) {}
+            : _mdarray(mapping_type(extents_type(exts), strides), std::move(ctr)) {}
 
         constexpr TensorArray(container_type&& ctr, const coord_type& exts)
-            : _mdarray(mapping_type(exts), std::move(ctr)) {}
+            : _mdarray(mapping_type(extents_type(exts)), std::move(ctr)) {}
 
         constexpr TensorArray(container_type&& ctr, const coord_type& exts, const coord_type& strides)
             : _mdarray(mapping_type(extents_type(exts), strides), std::move(ctr)) {}

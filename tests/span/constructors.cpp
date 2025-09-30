@@ -7,12 +7,20 @@
 #include "mdspan/mdspan.hpp"
 #include "nabla/nabla.hpp"
 #include "nabla/ostream.hpp"
+#include "read_only.hpp"
+
+using Ext1 = Kokkos::dextents<size_t, 2>;
+using Ext2 = Kokkos::dextents<int, 2>;
+using Arr1 = std::array<size_t, 2>;
+using TensorSpan = nabla::TensorSpan<float, Ext1, nabla::LeftStride>;
+//using TensorSpan = nabla::TensorSpan<float, Ext1, nabla::LeftStride, read_only_accessor<float>>;
+// using TensorSpan = nabla::TensorSpan<float, Ext1, Kokkos::layout_stride>;
+
+template class nabla::TensorSpan<float, Ext1, nabla::LeftStride>;
+// template class nabla::TensorSpan<const float, Kokkos::extents<int, 2, 3, 4>, nabla::LeftStride, read_only_accessor<float>>;
 
 int main() {
-    using Ext1 = Kokkos::dextents<size_t, 2>;
-    using Ext2 = Kokkos::dextents<int, 2>;
-    using Arr1 = std::array<size_t, 2>;
-    using TensorSpan = nabla::TensorSpan<float, Ext1, nabla::LeftStride, nabla::read_only_accessor<float>>;
+
 
     std::vector<float> vec(1000);
 

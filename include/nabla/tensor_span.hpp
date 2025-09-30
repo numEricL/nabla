@@ -98,14 +98,14 @@ class TensorSpan<const T, Extents, LayoutPolicy, AccessorPolicy> {
             : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts...))) {}
 
         template <typename OtherExtents>
-            requires detail::is_extents_v<OtherExtents>
+            requires std::is_convertible_v<OtherExtents, extents_type>
         constexpr TensorSpan(data_handle_type p, const OtherExtents& exts)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(exts)) {}
+            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts))) {}
 
         template <typename OtherExtents>
-            requires detail::is_extents_v<OtherExtents>
+            requires std::is_convertible_v<OtherExtents, extents_type>
         constexpr TensorSpan(data_handle_type p, const OtherExtents& exts, const coord_type& strides)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(exts, strides)) {}
+            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts), strides)) {}
 
         constexpr TensorSpan(data_handle_type p, const coord_type& exts)
             : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts))) {}
@@ -118,36 +118,6 @@ class TensorSpan<const T, Extents, LayoutPolicy, AccessorPolicy> {
 
         constexpr TensorSpan(data_handle_type p, const mapping_type& mapping, const accessor_type& accessor)
             : _mdspan(accessor_type::write_cast(p), mapping, accessor.to_write()) {}
-
-    // Subspan constructors
-    protected:
-        explicit constexpr TensorSpan(const TensorSpan& parent, const extents_type& exts)
-            : _mdspan(parent._mdspan.data_handle(), mapping_type(parent.mapping().submap(exts)), parent._mdspan.accessor()) {}
-
-        explicit constexpr TensorSpan(const TensorSpan& parent, const extents_type& exts, const coord_type& offsets)
-            : _mdspan(parent._mdspan.accessor().offset(parent._mdspan.data_handle(), std::apply(parent.mapping(), offsets)), mapping_type(parent.mapping().submap(exts, offsets)), parent._mdspan.accessor()) {}
-
-    // Subspan
-    public:
-        template<typename E>
-            requires std::is_same_v<E, extents_type>
-        constexpr TensorSpan subspan(const extents_type& exts) const {
-            return TensorSpan(*this, exts);
-        }
-
-        template<typename E>
-            requires std::is_same_v<E, extents_type>
-        constexpr TensorSpan subspan(const extents_type& exts, const coord_type& offsets) const {
-            return TensorSpan(*this, exts, offsets);
-        }
-
-        constexpr TensorSpan subspan(const coord_type& exts) const {
-            return TensorSpan(*this, extents_type(exts));
-        }
-
-        constexpr TensorSpan subspan(const coord_type& exts, const coord_type& offsets) const {
-            return TensorSpan(*this, extents_type(exts), offsets);
-        }
 
     //
     // Modifiers
@@ -210,20 +180,10 @@ class TensorSpan : public TensorSpan<const T, Extents, LayoutPolicy, typename Ac
     public:
         using element_type = T;
         using value_type   = std::remove_cv_t<element_type>;
-
-        using extents_type = typename base_type::extents_type;
         using index_type   = typename base_type::index_type;
-        using size_type    = typename base_type::size_type;
-        using rank_type    = typename base_type::rank_type;
-
-        using layout_type  = typename base_type::layout_type;
-        using mapping_type = typename base_type::mapping_type;
-
         using accessor_type    = typename AccessorPolicy::write_accessor_type;
         using reference        = typename accessor_type::reference;
         using data_handle_type = typename accessor_type::data_handle_type;
-
-        using coord_type    = typename base_type::coord_type;
         using iterator_type = TensorSpanIterator<TensorSpan>;
 
     //
@@ -259,30 +219,8 @@ class TensorSpan : public TensorSpan<const T, Extents, LayoutPolicy, typename Ac
     //
     public:
         using base_type::base_type; // inherit constructors
-        constexpr TensorSpan() = default;
         constexpr TensorSpan(const TensorSpan&) = default;
         constexpr TensorSpan(TensorSpan&&) = default;
-
-    public:
-        template<typename E>
-            requires std::is_same_v<E, extents_type>
-        constexpr TensorSpan subspan(const extents_type& exts) const {
-           return TensorSpan(*this, exts);
-        }
-
-        template<typename E>
-            requires std::is_same_v<E, extents_type>
-        constexpr TensorSpan subspan(const extents_type& exts, const coord_type& offsets) const {
-           return TensorSpan(*this, exts, offsets);
-        }
-
-        constexpr TensorSpan subspan(const coord_type& exts) const {
-           return TensorSpan(*this, extents_type(exts));
-        }
-
-        constexpr TensorSpan subspan(const coord_type& exts, const coord_type& offsets) const {
-           return TensorSpan(*this, extents_type(exts), offsets);
-        }
 
     //
     // Modifiers
@@ -322,11 +260,6 @@ class TensorSpan : public TensorSpan<const T, Extents, LayoutPolicy, typename Ac
         }
 
         TensorSpan& operator=(TensorSpan&& other) {
-            this->_mdspan = std::move(other._mdspan);
-            return *this;
-        }
-
-        TensorSpan& operator=(base_type&& other) {
             this->_mdspan = std::move(other._mdspan);
             return *this;
         }
