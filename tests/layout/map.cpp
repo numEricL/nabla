@@ -6,7 +6,10 @@
 #include <iostream>
 #include "mdspan/mdspan.hpp"
 #include "mdspan/mdarray.hpp"
+#include "nabla/types.hpp"
 #include "nabla/layout/left_stride.hpp"
+
+namespace nb = nabla;
 
 template <typename MapT>
     requires (MapT::extents_type::rank() == 2)
@@ -95,13 +98,13 @@ int iterator_test(const MapT& map) {
 }
 
 template <size_t Rank>
-using Ext = Kokkos::dextents<size_t, Rank>;
+using Ext = nb::dextents<size_t, Rank>;
 
 template <size_t Rank>
 using Arr = std::array<size_t, Rank>;
 
-using Layout = nabla::LeftStride;
-// using Layout = Kokkos::layout_stride;
+using Layout = nb::LeftStride;
+// using Layout = nb::layout_stride;
 
 template <size_t Rank>
 using Mapping = Layout::mapping<Ext<Rank>>;
@@ -129,11 +132,11 @@ int main() {
 
     {
         Mapping<3> map(Ext<3>{2, 3, 4}, Arr<3>{1, 10, 100});
-        auto submap = submdspan_mapping(map, Kokkos::strided_slice{0,2,1}, Kokkos::strided_slice{1,3,1}, Kokkos::strided_slice{0,4,1});
+        auto submap = submdspan_mapping(map, nb::strided_slice{0,2,1}, nb::strided_slice{1,3,1}, nb::strided_slice{0,4,1});
 
-        Kokkos::Experimental::mdarray<int, Ext<3>, Layout> arr{map};
+        nb::mdspan_ns::Experimental::mdarray<int, Ext<3>, Layout> arr{map};
         auto span = arr.to_mdspan();
-        auto subspan = Kokkos::submdspan(span, Kokkos::strided_slice{0,2,1}, Kokkos::strided_slice{1,3,1}, Kokkos::strided_slice{0,4,1});
+        auto subspan = nb::mdspan_ns::submdspan(span, nb::strided_slice{0,2,1}, nb::strided_slice{1,3,1}, nb::strided_slice{0,4,1});
 
     }
 

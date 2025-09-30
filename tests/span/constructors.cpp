@@ -9,15 +9,17 @@
 #include "nabla/ostream.hpp"
 #include "read_only.hpp"
 
-using Ext1 = Kokkos::dextents<size_t, 2>;
-using Ext2 = Kokkos::dextents<int, 2>;
-using Arr1 = std::array<size_t, 2>;
-using TSpan = nabla::TensorSpan<float, Ext1, nabla::LeftStride>;
-//using TSpan = nabla::TensorSpan<float, Ext1, nabla::LeftStride, read_only_accessor<float>>;
-// using TSpan = nabla::TensorSpan<float, Ext1, Kokkos::layout_stride>;
+namespace nb = nabla;
 
-template class nabla::TensorSpan<float, Ext1, nabla::LeftStride>;
-template class nabla::TensorSpan<const float, Kokkos::extents<int, 2, 3, 4>, nabla::LeftStride, read_only_accessor<float>>;
+using Ext1 = nb::dextents<size_t, 2>;
+using Ext2 = nb::dextents<int, 2>;
+using Arr1 = std::array<size_t, 2>;
+using TSpan = nb::TensorSpan<float, Ext1, nb::LeftStride>;
+//using TSpan = nb::TensorSpan<float, Ext1, nb::LeftStride, read_only_accessor<float>>;
+// using TSpan = nb::TensorSpan<float, Ext1, nb::layout_stride>;
+
+template class nb::TensorSpan<float, Ext1, nb::LeftStride>;
+template class nb::TensorSpan<const float, nb::extents<int, 2, 3, 4>, nb::LeftStride, read_only_accessor<float>>;
 
 int main() {
 

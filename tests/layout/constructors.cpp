@@ -5,17 +5,19 @@
 #include "mdspan/mdspan.hpp"
 #include "nabla/layout/left_stride.hpp"
 
+namespace nb = nabla;
+
 int main() {
 
-    //using Ext1 = Kokkos::dextents<size_t, 2>;
-    //using Ext2 = Kokkos::dextents<int, 2>;
+    //using Ext1 = nb::dextents<size_t, 2>;
+    //using Ext2 = nb::dextents<int, 2>;
 
-    using Ext1 = Kokkos::extents<size_t, 3, 4>;
-    using Ext2 = Kokkos::extents<int, 3, 4>;
+    using Ext1 = nb::extents<size_t, 3, 4>;
+    using Ext2 = nb::extents<int, 3, 4>;
     using Arr1 = std::array<size_t, 2>;
     using Arr2 = std::array<int, 2>;
-    using Mapping = nabla::LeftStride::mapping<Ext1>;
-    //using Mapping = Kokkos::layout_stride::mapping<Ext1>;
+    using Mapping = nb::LeftStride::mapping<Ext1>;
+    //using Mapping = nb::layout_stride::mapping<Ext1>;
 
     // default constructor
     {

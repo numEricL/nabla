@@ -10,8 +10,8 @@
 namespace nabla {
 
 template <typename Op, typename... Inputs>
-    requires (nabla::IsExprIteratorCompatible<Inputs> && ...)
-class ExprIterator : public nabla::ExprIteratorTag {
+    requires (IsExprIteratorCompatible<Inputs> && ...)
+class ExprIterator : public ExprIteratorTag {
     Op _op;
     std::tuple<Inputs...> _inputs;
     using input1_t = std::tuple_element_t<0, std::tuple<Inputs...>>;

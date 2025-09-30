@@ -43,7 +43,7 @@ class default_accessor<const T> {
 template <typename T>
 class default_accessor : public default_accessor<const T> {
     public:
-        //using offset_policy = default_accessor;
+        using offset_policy = default_accessor;
         using element_type = T;
         using reference = T&;
         using data_handle_type = T*;

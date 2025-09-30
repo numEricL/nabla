@@ -6,6 +6,8 @@
 #include <iostream>
 #include "nabla/nabla.hpp"
 
+namespace nb = nabla;
+
 template<typename T>
 void print2d(const T& span) {
     for (std::size_t i = 0; i < span.extent(0); ++i) {
@@ -63,14 +65,14 @@ void shared_ptr_example() {
     // fill it
     for (int i = 0; i < 6; ++i) data[i] = i * 10;
 
-    using extents_t = Kokkos::extents<std::size_t, 2, 3>;
-    using layout_t = nabla::LeftStride;
+    using extents_t = nb::extents<std::size_t, 2, 3>;
+    using layout_t = nb::LeftStride;
 
     using mdspan_t = Kokkos::mdspan<int, extents_t, layout_t, shared_ptr_accessor<int>>;
     using cmdspan_t = Kokkos::mdspan<const int, extents_t, layout_t, shared_ptr_accessor<const int>>;
 
-    using Tensor_t = nabla::TensorSpan<int, extents_t, layout_t, shared_ptr_accessor<int>>;
-    using cTensor_t = nabla::TensorSpan<const int, extents_t, layout_t, shared_ptr_accessor<const int>>;
+    using Tensor_t = nb::TensorSpan<int, extents_t, layout_t, shared_ptr_accessor<int>>;
+    using cTensor_t = nb::TensorSpan<const int, extents_t, layout_t, shared_ptr_accessor<const int>>;
 
     extents_t exts;
 
@@ -92,7 +94,7 @@ void shared_ptr_example() {
 void example() {
     int data[6] = {0, 10, 20, 30, 40, 50};
 
-    using extents_t = Kokkos::extents<std::size_t, 2, 3>;
+    using extents_t = nb::extents<std::size_t, 2, 3>;
     extents_t exts;
 
     Kokkos::mdspan<int, extents_t>

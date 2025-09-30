@@ -2,16 +2,16 @@
 #define NABLA_TYPES_HPP
 
 #include <vector>
-#include "mdspan/mdspan.hpp" // for extents and MDSPAN_IMPL_STANDARD_NAMESPACE
-
-namespace nabla{}
-namespace nb = nabla;
-namespace mdspan_ns = Kokkos;
+#include "mdspan/mdspan.hpp" // for extents
 
 namespace nabla {
 
-    template< std::size_t Rank, typename IndexT = std::size_t >
-    using dims = typename mdspan_ns::dextents<IndexT, Rank>;
+    namespace mdspan_ns = Kokkos;
+    using mdspan_ns::extents;
+    using mdspan_ns::dextents;
+    using mdspan_ns::Experimental::dims;
+    using mdspan_ns::strided_slice;
+    using mdspan_ns::full_extent;
 
     struct LeftStride;
 
@@ -21,7 +21,7 @@ namespace nabla {
     template <
         typename ElementType,
         typename Extents,
-        typename LayoutPolicy = nabla::LeftStride,
+        typename LayoutPolicy = LeftStride,
         typename AccessorPolicy = default_accessor<ElementType>
     > class TensorSpan;
 
@@ -38,7 +38,7 @@ namespace nabla {
         template <class T> struct impl_is_extents : ::std::false_type {};
 
         template <class IndexType, size_t... ExtentsPack>
-        struct impl_is_extents<::MDSPAN_IMPL_STANDARD_NAMESPACE::extents<IndexType, ExtentsPack...>> : ::std::true_type {};
+        struct impl_is_extents<extents<IndexType, ExtentsPack...>> : ::std::true_type {};
 
         template <class T>
         inline constexpr bool is_extents_v = impl_is_extents<std::remove_cvref_t<T>>::value;

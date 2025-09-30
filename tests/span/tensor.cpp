@@ -7,6 +7,9 @@
 #include "mdspan/mdspan.hpp"
 #include "nabla/nabla.hpp"
 #include "nabla/ostream.hpp"
+#include "nabla/utility.hpp"
+
+namespace nb = nabla;
 
 template <typename TensorT>
     requires (TensorT::rank() == 2)
@@ -15,7 +18,8 @@ int test_access(TensorT& mat) {
     coord_type dims {mat.extent(0), mat.extent(1)};
     coord_type sub_dims = {dims[0]/2, dims[1]/2};
     coord_type offsets = {1, 1};
-    TensorT submat = mat.subspan(sub_dims, offsets);
+    auto submat = nb::subspan(mat, std::pair{offsets[0], offsets[0] + sub_dims[0]},
+                                       std::pair{offsets[1], offsets[1] + sub_dims[1]});
 
     for (auto iter = mat.begin(); iter != mat.end(); ++iter) {
         *iter = 0;
@@ -80,11 +84,11 @@ int test_assignment(TensorT& mat1, TensorT& mat2) {
 }
 
 int main() {
-    using Layout = nabla::LeftStride;
-    using TensorType = nabla::TensorSpan<int, nabla::dims<2>, Layout>;
+    using Layout = nb::LeftStride;
+    using TensorType = nb::TensorSpan<int, nb::dims<2>, Layout>;
 
-    Layout::mapping<nabla::dims<2>> map1({4,4}, {1,10});
-    Layout::mapping<nabla::dims<2>> map2({4,4});
+    Layout::mapping<nb::dims<2>> map1({4,4}, {1,10});
+    Layout::mapping<nb::dims<2>> map2({4,4});
     std::vector<int> data1(map1.required_span_size());
     std::vector<int> data2(map2.required_span_size());
     TensorType mat1(data1.data(), map1);

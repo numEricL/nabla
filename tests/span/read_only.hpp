@@ -2,6 +2,8 @@
 
 #include "nabla/nabla.hpp"
 
+namespace nb = nabla;
+
 template <typename T>
 class read_only_accessor {
     public:
@@ -30,7 +32,7 @@ class read_only_accessor {
 
     private:
         template <typename U, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
-        friend class nabla::TensorSpan;
+        friend class nb::TensorSpan;
 
         static write_handle_type write_cast(data_handle_type p) noexcept {
             return p;

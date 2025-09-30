@@ -6,7 +6,7 @@ namespace nabla {
 template <typename ElementType, typename Extents, typename LayoutPolicy,
           typename AccessorPolicy, typename... SliceSpecifiers>
 constexpr auto
-subspan(const TensorSpan<ElementType, Extents, LayoutPolicy, AccessorPolicy> &src,
+subspan(const TensorSpan<ElementType, Extents, LayoutPolicy, AccessorPolicy>& src,
         SliceSpecifiers... slices) {
     const auto sub_submdspan_mapping_result = submdspan_mapping(src.mapping(), slices...);
     using sub_mapping_t = std::remove_cv_t<decltype(sub_submdspan_mapping_result.mapping)>;
@@ -22,7 +22,7 @@ subspan(const TensorSpan<ElementType, Extents, LayoutPolicy, AccessorPolicy> &sr
 template <typename ElementType, typename Extents, typename LayoutPolicy,
           typename Container, typename... SliceSpecifiers>
 constexpr auto
-subspan(const TensorArray<ElementType, Extents, LayoutPolicy, Container> &src,
+subspan(const TensorArray<ElementType, Extents, LayoutPolicy, Container>& src,
         SliceSpecifiers... slices) {
     return subspan(src.to_span(), slices...);
 }

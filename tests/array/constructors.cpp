@@ -8,11 +8,13 @@
 #include "nabla/nabla.hpp"
 #include "nabla/ostream.hpp"
 
+namespace nb = nabla;
+
 int main() {
-    using Ext1 = Kokkos::dextents<size_t, 2>;
-    using Ext2 = Kokkos::dextents<int, 2>;
+    using Ext1 = nb::dextents<size_t, 2>;
+    using Ext2 = nb::dextents<int, 2>;
     using Arr1 = std::array<size_t, 2>;
-    using TensorArray = nabla::TensorArray<float, Ext1, nabla::LeftStride>;
+    using TensorArray = nb::TensorArray<float, Ext1, nb::LeftStride>;
 
     std::vector<float> vec(1000);
 
@@ -83,9 +85,9 @@ int main() {
     }
 
     {
-        using Ext1 = Kokkos::dextents<size_t, 2>;
+        using Ext1 = nb::dextents<size_t, 2>;
         using Arr1 = std::array<size_t, 2>;
-        using TensorArray = nabla::TensorArray<float, Ext1, nabla::LeftStride>;
+        using TensorArray = nb::TensorArray<float, Ext1, nb::LeftStride>;
         TensorArray t1({{ 1, 2, 3 }, { 4, 5, 6 }});
         TensorArray t2 = {{ 1, 2, 3 }, { 4, 5, 6 }};
 

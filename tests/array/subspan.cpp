@@ -6,16 +6,18 @@
 #include "mdspan/mdarray.hpp"
 #include "nabla/nabla.hpp"
 
+namespace nb = nabla;
+
 template <int Rank>
-using Ext = Kokkos::dextents<size_t, Rank>;
-using Layout = nabla::LeftStride;
+using Ext = nb::dextents<size_t, Rank>;
+using Layout = nb::LeftStride;
 template <int Rank>
 using Mapping = Layout::mapping<Ext<Rank>>;
 
 template <typename fp, int Rank>
-using Arr = nabla::TensorArray<fp, Ext<Rank>, Layout>;
+using Arr = nb::TensorArray<fp, Ext<Rank>, Layout>;
 
-using ss = mdspan_ns::strided_slice<int, int, int>;
+using ss = nb::strided_slice<int, int, int>;
 int main() {
     using fp = float;
 
@@ -25,7 +27,7 @@ int main() {
     for (auto i = arr.begin(); i != arr.end(); ++i) {
         *i = counter++;
     }
-    //auto subspan = nabla::subspan(arr, ss{1}, ss{1,5,1}, ss{1,6,1});
+    auto subspan = nb::subspan(arr, ss{1}, ss{1,5,1}, ss{1,6,1});
     //std::cout << subspan << std::endl;
     return 0;
 }

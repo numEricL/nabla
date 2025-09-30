@@ -4,6 +4,8 @@
 #include "nabla/ostream.hpp"
 #include "nabla/utility.hpp"
 
+namespace nb = nabla;
+
 int check(bool condition) {
     if (!condition) {
         std::cerr << "Check failed!\n";
@@ -13,8 +15,8 @@ int check(bool condition) {
 
 int main() {
     using fp = float;
-    using Map = nabla::LeftStride::mapping<nabla::dims<2>>;
-    using TensorSpan = nabla::TensorSpan<fp, nabla::dims<2>, nabla::LeftStride>;
+    using Map = nb::LeftStride::mapping<nb::dims<2>>;
+    using TensorSpan = nb::TensorSpan<fp, nb::dims<2>, nb::LeftStride>;
     using tt = typename TensorSpan::value_type;
 
     Map map({2,3}, {2, 10});
@@ -65,7 +67,7 @@ int main() {
     std::cout << std::endl;
 
     std::cout << "a b c" << "\n";
-    nabla::utility::for_each_in_tuple(inputs, [](const auto& t) {
+    nb::utility::for_each_in_tuple(inputs, [](const auto& t) {
         std::cout << *t << "\n";
     });
 

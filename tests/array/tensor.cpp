@@ -8,6 +8,8 @@
 #include "nabla/nabla.hpp"
 #include "nabla/ostream.hpp"
 
+namespace nb = nabla;
+
 template <typename TensorT>
     requires (TensorT::rank() == 2)
 int test_assignment(TensorT& mat1, TensorT& mat2) {
@@ -32,11 +34,11 @@ int test_assignment(TensorT& mat1, TensorT& mat2) {
 }
 
 int main() {
-    using Layout = nabla::LeftStride;
-    using TensorArrayType = nabla::TensorArray<int, nabla::dims<2>, Layout>;
+    using Layout = nb::LeftStride;
+    using TensorArrayType = nb::TensorArray<int, nb::dims<2>, Layout>;
 
-    Layout::mapping<nabla::dims<2>> map1({4,4}, {1,10});
-    Layout::mapping<nabla::dims<2>> map2({4,4});
+    Layout::mapping<nb::dims<2>> map1({4,4}, {1,10});
+    Layout::mapping<nb::dims<2>> map2({4,4});
     TensorArrayType mat1(map1);
     TensorArrayType mat2(map2);
 
