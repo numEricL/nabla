@@ -12,12 +12,12 @@
 using Ext1 = Kokkos::dextents<size_t, 2>;
 using Ext2 = Kokkos::dextents<int, 2>;
 using Arr1 = std::array<size_t, 2>;
-using TensorSpan = nabla::TensorSpan<float, Ext1, nabla::LeftStride>;
-//using TensorSpan = nabla::TensorSpan<float, Ext1, nabla::LeftStride, read_only_accessor<float>>;
-// using TensorSpan = nabla::TensorSpan<float, Ext1, Kokkos::layout_stride>;
+using TSpan = nabla::TensorSpan<float, Ext1, nabla::LeftStride>;
+//using TSpan = nabla::TensorSpan<float, Ext1, nabla::LeftStride, read_only_accessor<float>>;
+// using TSpan = nabla::TensorSpan<float, Ext1, Kokkos::layout_stride>;
 
 template class nabla::TensorSpan<float, Ext1, nabla::LeftStride>;
-// template class nabla::TensorSpan<const float, Kokkos::extents<int, 2, 3, 4>, nabla::LeftStride, read_only_accessor<float>>;
+template class nabla::TensorSpan<const float, Kokkos::extents<int, 2, 3, 4>, nabla::LeftStride, read_only_accessor<float>>;
 
 int main() {
 
@@ -26,50 +26,50 @@ int main() {
 
     // constructor 1
     {
-        TensorSpan t1{};
+        TSpan t1{};
     }
 
     // constructor 2
     {
-        TensorSpan t1(vec.data(), 3, 4);
-        TensorSpan t2(vec.data(), 3lu, 4lu);
+        TSpan t1(vec.data(), 3, 4);
+        TSpan t2(vec.data(), 3lu, 4lu);
     }
 
     // constructor 3
     {
-        TensorSpan t1(vec.data(), Ext1{3, 4});
-        TensorSpan t2(vec.data(), Ext2{3, 4});
+        TSpan t1(vec.data(), Ext1{3, 4});
+        TSpan t2(vec.data(), Ext2{3, 4});
     }
 
     // constructor 4
     {
-        TensorSpan t1(vec.data(), Ext1{3, 4}, Arr1{1, 10});
-        TensorSpan t3(vec.data(), Ext1{3, 4}, {1, 10});
-        TensorSpan t4(vec.data(), Ext2{3, 4}, {1, 10});
+        TSpan t1(vec.data(), Ext1{3, 4}, Arr1{1, 10});
+        TSpan t3(vec.data(), Ext1{3, 4}, {1, 10});
+        TSpan t4(vec.data(), Ext2{3, 4}, {1, 10});
     }
 
     // construct 5
     {
-        TensorSpan t1(vec.data(), Arr1{3, 4});
-        TensorSpan t2(vec.data(), {3, 4});
+        TSpan t1(vec.data(), Arr1{3, 4});
+        TSpan t2(vec.data(), {3, 4});
     }
 
     // construct 6
     {
-        TensorSpan t1(vec.data(), Arr1{3, 4}, Arr1{1, 10});
-        TensorSpan t2(vec.data(), {3, 4}, {1, 10});
+        TSpan t1(vec.data(), Arr1{3, 4}, Arr1{1, 10});
+        TSpan t2(vec.data(), {3, 4}, {1, 10});
     }
 
     // construct 7
     {
-        TensorSpan t1(vec.data(), typename TensorSpan::mapping_type(Ext1{3, 4}));
+        TSpan t1(vec.data(), typename TSpan::mapping_type(Ext1{3, 4}));
     }
 
     // copy/move constructors
     {
-        TensorSpan t1(vec.data(), 3, 4);
-        TensorSpan t2(t1);
-        TensorSpan t3(std::move(t1));
+        TSpan t1(vec.data(), 3, 4);
+        TSpan t2(t1);
+        TSpan t3(std::move(t1));
     }
 
     return 0;

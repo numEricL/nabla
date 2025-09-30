@@ -30,7 +30,7 @@ class read_only_accessor {
 
     private:
         template <typename U, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
-            friend class TensorSpan;
+        friend class nabla::TensorSpan;
 
         static write_handle_type write_cast(data_handle_type p) noexcept {
             return p;
