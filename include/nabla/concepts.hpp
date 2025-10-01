@@ -14,10 +14,30 @@ namespace nabla {
 //IsTensorSpan<T1> && IsTensorSpan<T2> && (T1::rank() == T2::rank());
 
 //
+// Extents Concepts
+//
+namespace detail {
+    template <typename T> struct impl_is_extents : std::false_type {};
+
+    template <typename IndexType, size_t... ExtentsPack>
+    struct impl_is_extents<extents<IndexType, ExtentsPack...>> : std::true_type {};
+
+} // namespace detail
+
+template <typename T>
+concept IsExtents = detail::impl_is_extents<std::remove_cvref_t<T>>::value;
+
+//
+// Mapping Concepts
+//
+template <typename T>
+concept IsMapping = requires { typename T::mapping_tag; };
+
+//
 // TensorSpan Concepts
 //
 namespace detail {
-    template <class T> struct impl_is_tensor_span : std::false_type {};
+    template <typename T> struct impl_is_tensor_span : std::false_type {};
 
     template <typename T, typename Extents, typename LayoutT, typename AccessorT>
     struct impl_is_tensor_span<TensorSpan<T, Extents, LayoutT, AccessorT>> : std::true_type {};
@@ -28,13 +48,13 @@ concept IsTensorSpan = detail::impl_is_tensor_span<std::remove_cvref_t<T>>::valu
 
 //
 // TensorSpanIterator Concepts
-
+//
 template <typename TensorSpanT>
     requires (IsTensorSpan<TensorSpanT>)
 class TensorSpanIterator;
 
 namespace detail {
-    template <class T> struct impl_is_tensor_span_iterator : std::false_type {};
+    template <typename T> struct impl_is_tensor_span_iterator : std::false_type {};
 
     template <typename TensorT>
         struct impl_is_tensor_span_iterator<TensorSpanIterator<TensorT>> : std::true_type {};
@@ -47,7 +67,7 @@ concept IsTensorSpanIterator = detail::impl_is_tensor_span_iterator<std::remove_
 // TensorArray Concepts
 //
 namespace detail {
-    template <class T> struct impl_is_tensor_array : std::false_type {};
+    template <typename T> struct impl_is_tensor_array : std::false_type {};
 
     template <typename T, typename Extents, typename LayoutT, typename ContainerT>
     struct impl_is_tensor_array<TensorArray<T, Extents, LayoutT, ContainerT>> : std::true_type {};

@@ -7,6 +7,7 @@
 #include "nabla/tensor_array_iterator.hpp"
 #include "nabla/default_accessor.hpp"
 #include "nabla/nested_initializer_list.hpp"
+#include "nabla/concepts.hpp"
 
 namespace nabla {
 
@@ -181,6 +182,20 @@ class TensorArray {
         constexpr TensorArray(container_type&& ctr, const mapping_type& mapping)
             : _mdarray(mapping, std::move(ctr)) {}
 
+        template <typename U>
+            requires IsTensorArray<U> || IsTensorSpan<U>
+        constexpr TensorArray(const U& other)
+            : _mdarray(mapping_type(other.extents(), other.mapping().strides())) {
+                *this = other;
+            }
+
+        template <typename U>
+            requires IsTensorExpr<U>
+        constexpr TensorArray(const U& other)
+            : _mdarray(mapping_type(other.extents(), other.mapping().strides())) {
+                *this = other;
+            }
+
     //
     // Operator =
     //
@@ -257,7 +272,6 @@ class TensorArray {
     // Conversion to TensorSpan
     //
     public:
-
 
         // operator to const TensorSpan
         template <typename AccessorType = default_accessor<std::add_const_t<element_type>>>

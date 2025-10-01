@@ -5,7 +5,7 @@
 #include <sstream>
 #include <stacktrace>
 #include <stdexcept>
-#include "nabla/types.hpp" // for is_extents_v
+#include "nabla/concepts.hpp"
 #include "nabla/layout/left_iterator.hpp"
 
 namespace nabla {
@@ -17,6 +17,7 @@ struct LeftStride {
         // Member types
         //
         public:
+            using mapping_tag = void; // for concept IsMapping
             using base_t = mdspan_ns::layout_stride::mapping<Extents>;
             using layout_type = LeftStride;
             using extents_type = typename base_t::extents_type;
@@ -51,14 +52,14 @@ struct LeftStride {
             constexpr mapping& operator=(mapping&&) = default;
 
             template<typename OtherExtents>
-                requires detail::is_extents_v<OtherExtents>
+                requires IsExtents<OtherExtents>
             constexpr mapping(const OtherExtents& exts, const coord_type& strides)
                 : base_t::mapping(exts, strides) {
                     _assert_constructor();
                 }
 
             template<typename OtherExtents>
-                requires detail::is_extents_v<OtherExtents>
+                requires IsExtents<OtherExtents>
             constexpr mapping(const OtherExtents& exts)
                 : mapping(exts, _default_strides(exts)) {}
 
@@ -78,7 +79,7 @@ struct LeftStride {
         //
         public:
             // For ADL use by submdspan
-            template<class... SliceSpecifiers>
+            template<typename... SliceSpecifiers>
             friend constexpr auto submdspan_mapping(const mapping& src, SliceSpecifiers&&... slices) {
                 using SubExtents = decltype(mdspan_ns::submdspan_extents(src.extents(), slices...));
                 using SubMap = mapping<SubExtents>;
@@ -120,7 +121,7 @@ struct LeftStride {
         //// Submap
         //public:
         //    template<typename OtherExtents>
-        //        requires detail::is_extents_v<OtherExtents>
+        //        requires IsExtents<OtherExtents>
         //    mapping submap(const OtherExtents& exts, const coord_type& offsets = {}) const {
         //        return mapping(*this, exts, offsets);
         //    }

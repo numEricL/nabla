@@ -7,7 +7,8 @@
 #include <string>
 #include <type_traits>
 
-#include "nabla/layout/left_stride.hpp" // remove once we support all layouts
+#include "nabla/types.hpp"
+#include "nabla/concepts.hpp"
 
 namespace nabla {
 namespace detail {
@@ -65,12 +66,10 @@ void print2d(std::ostream& os, const MatT& mat) {
 } // namespace detail
 
 
-// TODO: enable for all layouts
-template <typename Extents>
-std::ostream& operator<<(std::ostream& os, const typename LeftStride::mapping<Extents>& mapping) {
-    using MappingT = typename LeftStride::mapping<Extents>;
+template <typename MappingT>
+    requires IsMapping<MappingT> && (MappingT::extents_type::rank() == 2)
+std::ostream& operator<<(std::ostream& os, const MappingT& mapping) {
     using Index = MappingT::index_type;
-
     detail::print2d<Index>(os, mapping);
     return os;
 }
@@ -81,6 +80,30 @@ std::ostream& operator<<(std::ostream& os, const TensorT& mat) {
     using T = typename TensorT::value_type;
 
     detail::print2d<T>(os, mat);
+    return os;
+}
+
+template <typename Extents>
+    requires IsExtents<Extents>
+std::ostream& operator<<(std::ostream& os, const Extents& exts) {
+    os << "(";
+    for (size_t i = 0; i < exts.rank(); ++i) {
+        os << exts.extent(i);
+        if (i < exts.rank() - 1) os << ", ";
+    }
+    os << ")";
+    return os;
+}
+
+template <typename OffsetT, typename ExtentT, typename StrideT>
+std::ostream& operator<<(std::ostream& os, const strided_slice<OffsetT, ExtentT, StrideT>& slice) {
+    os << "[" << slice.offset() << ":" << slice.extents() << ":" << slice.strides() << "]";
+    return os;
+}
+
+template <typename T, typename U>
+std::ostream& operator<<(std::ostream& os, const std::pair<T, U>& p) {
+    os << "[" << p.first << ":" << p.second << "]";
     return os;
 }
 

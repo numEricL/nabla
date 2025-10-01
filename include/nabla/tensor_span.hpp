@@ -68,18 +68,25 @@ class TensorSpan<const T, Extents, LayoutPolicy, AccessorPolicy> {
         static constexpr rank_type rank() noexcept { return mdspan_type::rank(); }
         static constexpr rank_type rank_dynamic() noexcept { return mdspan_type::rank_dynamic(); }
         static constexpr std::size_t static_extent(rank_type r) noexcept { return mdspan_type::static_extent(r); }
+        constexpr index_type extent(rank_type r) const noexcept { return _mdspan.extent(r); }
+
+        // in general, data handle and accessor cannot be cast to const references
+        // Q: should accessor_type::data_handle_ref_type and accessor_type::accessor_ref_type be introduced?
+        constexpr data_handle_type data_handle() const noexcept { return _mdspan.data_handle(); }
+        constexpr accessor_type accessor() const noexcept { return _mdspan.accessor(); }
+
+        constexpr const extents_type& extents() const noexcept { return _mdspan.extents(); }
+        constexpr const mapping_type& mapping() const noexcept { return _mdspan.mapping(); }
+
+
+        constexpr index_type stride(rank_type r) const noexcept { return _mdspan.stride(r); }
+        constexpr index_type size() const noexcept { return _mdspan.size(); }
+        constexpr bool empty() const noexcept { return _mdspan.empty(); }
+
         static constexpr bool is_always_unique = mdspan_type::is_always_unique;
         static constexpr bool is_always_exhaustive = mdspan_type::is_always_exhaustive;
         static constexpr bool is_always_strided = mdspan_type::is_always_strided;
 
-        constexpr index_type extent(rank_type r) const noexcept { return _mdspan.extent(r); }
-        constexpr index_type size() const noexcept { return _mdspan.size(); }
-        constexpr bool empty() const noexcept { return _mdspan.empty(); }
-        constexpr index_type stride(rank_type r) const noexcept { return _mdspan.stride(r); }
-        constexpr const extents_type& extents() const noexcept { return _mdspan.extents(); }
-        constexpr const data_handle_type& data_handle() const noexcept { return _mdspan.data_handle(); }
-        constexpr const mapping_type& mapping() const noexcept { return _mdspan.mapping(); }
-        constexpr const accessor_type& accessor() const noexcept { return _mdspan.accessor(); }
         constexpr bool is_unique() const noexcept { return _mdspan.is_unique(); }
         constexpr bool is_exhaustive() const noexcept { return _mdspan.is_exhaustive(); }
         constexpr bool is_strided() const noexcept { return _mdspan.is_strided(); }
@@ -194,23 +201,6 @@ class TensorSpan : public TensorSpan<const T, Extents, LayoutPolicy, typename Ac
     // Observers
     //
     public:
-        using base_type::rank;
-        using base_type::rank_dynamic;
-        using base_type::static_extent;
-        using base_type::is_always_unique;
-        using base_type::is_always_exhaustive;
-        using base_type::is_always_strided;
-
-        using base_type::extent;
-        using base_type::size;
-        using base_type::empty;
-        using base_type::stride;
-        using base_type::extents;
-        using base_type::mapping;
-        using base_type::is_unique;
-        using base_type::is_exhaustive;
-        using base_type::is_strided;
-
         constexpr const accessor_type& accessor() const noexcept { return _mdspan.accessor(); }
         constexpr const data_handle_type& data_handle() const noexcept { return _mdspan.data_handle(); }
 

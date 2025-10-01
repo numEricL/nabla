@@ -8,6 +8,7 @@ template <typename ElementType, typename Extents, typename LayoutPolicy,
 constexpr auto
 subspan(const TensorSpan<ElementType, Extents, LayoutPolicy, AccessorPolicy>& src,
         SliceSpecifiers... slices) {
+    // ADL call to LayoutPolicy::mapping
     const auto sub_submdspan_mapping_result = submdspan_mapping(src.mapping(), slices...);
     using sub_mapping_t = std::remove_cv_t<decltype(sub_submdspan_mapping_result.mapping)>;
     using sub_extents_t = typename sub_mapping_t::extents_type;
@@ -22,7 +23,7 @@ subspan(const TensorSpan<ElementType, Extents, LayoutPolicy, AccessorPolicy>& sr
 template <typename ElementType, typename Extents, typename LayoutPolicy,
           typename Container, typename... SliceSpecifiers>
 constexpr auto
-subspan(const TensorArray<ElementType, Extents, LayoutPolicy, Container>& src,
+subspan(TensorArray<ElementType, Extents, LayoutPolicy, Container>& src,
         SliceSpecifiers... slices) {
     return subspan(src.to_span(), slices...);
 }

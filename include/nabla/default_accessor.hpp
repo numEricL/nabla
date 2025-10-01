@@ -29,11 +29,7 @@ class default_accessor<const T> {
             return p + i;
         }
 
-    private:
-        template <typename U, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
-        friend class TensorSpan;
-
-        static write_handle_type write_cast(data_handle_type p) noexcept {
+        static const write_handle_type write_cast(const data_handle_type& p) noexcept {
             return const_cast<write_handle_type>(p);
         }
 
@@ -62,6 +58,10 @@ class default_accessor : public default_accessor<const T> {
 
         constexpr data_handle_type offset(data_handle_type p, size_t i) const noexcept {
             return p + i;
+        }
+
+        write_accessor_type to_write() const noexcept {
+            return *this;
         }
 };
 

@@ -28,21 +28,11 @@ namespace nabla {
     template <
         typename ElementType,
         typename Extents,
-        typename LayoutPolicy,
+        typename LayoutPolicy = LeftStride,
         typename Container = std::vector<ElementType>
     > class TensorArray;
 
     struct ExprTag {};
-
-    namespace detail {
-        template <class T> struct impl_is_extents : ::std::false_type {};
-
-        template <class IndexType, size_t... ExtentsPack>
-        struct impl_is_extents<extents<IndexType, ExtentsPack...>> : ::std::true_type {};
-
-        template <class T>
-        inline constexpr bool is_extents_v = impl_is_extents<std::remove_cvref_t<T>>::value;
-    } // namespace detail
 
     // TODO: remove
     namespace temp {
