@@ -17,14 +17,14 @@ template <
 >
 class TensorSpan<const T, Extents, LayoutPolicy, AccessorPolicy> {
     // TensorSpan class must enforce const-correctness through the inherited
-    // const pattern. Non-const TensorSpan<T> inherits from TensorSpan<const T>.
-    // TensorSpan<const T> owns data and provides a read-only interface, TensorSpan<T>
-    // only provides a read-write interface. The "is-a" relationship allows
-    // slicing off write access leaving behind a read-only interface. This
-    // allows for implicit polymorphism that wouldn't ordinarily be possible,
-    // such as is the case of template deduction or returning references to
-    // low-const types. The (usually light-weight) copy used in conversion
-    // operators is avoided as well.
+    // const pattern. The Non-const derived class inherits from the const base
+    // class. The base class owns data and provides a read-only interface, while
+    // the derived class is empty and provides a read-write interface. The
+    // "is-a" relationship allows slicing off write access leaving behind a
+    // read-only interface. This allows for implicit polymorphism that wouldn't
+    // ordinarily be possible, such as is the case of template deduction or
+    // returning references to low-const types. There is no need for conversion
+    // operators, avoiding potential copies.
 
     //
     // Data members
@@ -70,14 +70,11 @@ class TensorSpan<const T, Extents, LayoutPolicy, AccessorPolicy> {
         static constexpr std::size_t static_extent(rank_type r) noexcept { return mdspan_type::static_extent(r); }
         constexpr index_type extent(rank_type r) const noexcept { return _mdspan.extent(r); }
 
-        // in general, data handle and accessor cannot be cast to const references
-        // Q: should accessor_type::data_handle_ref_type and accessor_type::accessor_ref_type be introduced?
-        constexpr data_handle_type data_handle() const noexcept { return _mdspan.data_handle(); }
-        constexpr accessor_type accessor() const noexcept { return _mdspan.accessor(); }
+        constexpr const data_handle_type& data_handle() const noexcept { return _mdspan.data_handle(); }
+        constexpr const accessor_type& accessor() const noexcept { return _mdspan.accessor(); }
 
         constexpr const extents_type& extents() const noexcept { return _mdspan.extents(); }
         constexpr const mapping_type& mapping() const noexcept { return _mdspan.mapping(); }
-
 
         constexpr index_type stride(rank_type r) const noexcept { return _mdspan.stride(r); }
         constexpr index_type size() const noexcept { return _mdspan.size(); }
@@ -101,30 +98,30 @@ class TensorSpan<const T, Extents, LayoutPolicy, AccessorPolicy> {
 
         template <typename... IndexTypes>
             requires((std::is_convertible_v<IndexTypes, index_type> && ...))
-        explicit constexpr TensorSpan(data_handle_type p, IndexTypes... exts)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts...))) {}
+        explicit constexpr TensorSpan(const data_handle_type& p, IndexTypes... exts)
+            : _mdspan(p, mapping_type(extents_type(exts...))) {}
 
         template <typename OtherExtents>
             requires std::is_convertible_v<OtherExtents, extents_type>
-        constexpr TensorSpan(data_handle_type p, const OtherExtents& exts)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts))) {}
+        constexpr TensorSpan(const data_handle_type& p, const OtherExtents& exts)
+            : _mdspan(p, mapping_type(extents_type(exts))) {}
 
         template <typename OtherExtents>
             requires std::is_convertible_v<OtherExtents, extents_type>
-        constexpr TensorSpan(data_handle_type p, const OtherExtents& exts, const coord_type& strides)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts), strides)) {}
+        constexpr TensorSpan(const data_handle_type& p, const OtherExtents& exts, const coord_type& strides)
+            : _mdspan(p, mapping_type(extents_type(exts), strides)) {}
 
-        constexpr TensorSpan(data_handle_type p, const coord_type& exts)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts))) {}
+        constexpr TensorSpan(const data_handle_type& p, const coord_type& exts)
+            : _mdspan(p, mapping_type(extents_type(exts))) {}
 
-        constexpr TensorSpan(data_handle_type p, const coord_type& exts, const coord_type& strides)
-            : _mdspan(accessor_type::write_cast(p), mapping_type(extents_type(exts), strides)) {}
+        constexpr TensorSpan(const data_handle_type& p, const coord_type& exts, const coord_type& strides)
+            : _mdspan(p, mapping_type(extents_type(exts), strides)) {}
 
-        constexpr TensorSpan(data_handle_type p, const mapping_type& mapping)
-            : _mdspan(accessor_type::write_cast(p), mapping) {}
+        constexpr TensorSpan(const data_handle_type& p, const mapping_type& mapping)
+            : _mdspan(p, mapping) {}
 
-        constexpr TensorSpan(data_handle_type p, const mapping_type& mapping, const accessor_type& accessor)
-            : _mdspan(accessor_type::write_cast(p), mapping, accessor.to_write()) {}
+        constexpr TensorSpan(const data_handle_type& p, const mapping_type& mapping, const accessor_type& accessor)
+            : _mdspan(p, mapping, accessor.to_write()) {}
 
     //
     // Modifiers

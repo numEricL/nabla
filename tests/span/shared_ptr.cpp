@@ -5,6 +5,7 @@
 #include <memory>
 #include <iostream>
 #include "nabla/nabla.hpp"
+#include "accessors.hpp"
 
 namespace nb = nabla;
 
@@ -28,34 +29,13 @@ void negate2d(T& span) {
     }
 }
 
-template<class T>
-class shared_ptr_accessor {
-    public:
-        using element_type = T;
-        using reference = T&;
-        using data_handle_type = std::shared_ptr<T[]>;
-        using read_accessor_type = shared_ptr_accessor<const T>;
-        using write_accessor_type = shared_ptr_accessor<std::remove_const_t<T>>;
-        using write_handle_type = std::shared_ptr<std::remove_const_t<T>[]>;
+// template instantiation
+template class nb::TensorSpan<int, nb::extents<std::size_t, 2, 3>, nb::LeftStride, shared_ptr_accessor<int>>;
+template class nb::TensorSpan<const int, nb::extents<std::size_t, 2, 3>, nb::LeftStride, shared_ptr_accessor<const int>>;
+using ctensor_t = nb::TensorSpan<const int, nb::extents<std::size_t, 2, 3>, nb::LeftStride, shared_ptr_accessor<const int>>;
 
-        constexpr shared_ptr_accessor() noexcept = default;
-
-        constexpr reference access(data_handle_type const& p, std::size_t i) const noexcept {
-            return p.get()[i];
-        }
-
-        constexpr data_handle_type offset(data_handle_type const& p, std::size_t i) const noexcept {
-            return data_handle_type(p, p.get() + i); // aliasing constructor
-        }
-
-        operator shared_ptr_accessor<const element_type>() const noexcept {
-            return {};
-        }
-
-        static write_handle_type write_cast(std::shared_ptr<T[]> p) noexcept {
-            return const_pointer_cast<std::remove_const_t<T>[]>(p);
-        }
-};
+template class nb::mdspan_ns::mdspan<const int, nb::extents<std::size_t, 2, 3>, nb::LeftStride, shared_ptr_accessor<const int>>;
+using cmdspan_t = nb::mdspan_ns::mdspan<const int, nb::extents<std::size_t, 2, 3>, nb::LeftStride, shared_ptr_accessor<const int>>;
 
 void shared_ptr_example() {
     // allocate with shared_ptr
@@ -109,6 +89,13 @@ void example() {
 
 int main() {
     shared_ptr_example();
-    //example();
+    example();
+
+    auto data = std::shared_ptr<int[]>(new int[6], std::default_delete<int[]>());
+    cmdspan_t span(data);
+    ctensor_t tnsr(data);
+    auto& d1 = span.data_handle();
+    auto d2 = tnsr.data_handle();
+
     return 0;
 }
